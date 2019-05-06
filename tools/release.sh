@@ -12,12 +12,12 @@ fi
 version=$1
 
 main () {
-    # clean
-    # sanity_check
-    # bump_version
-    # patch_changelog
-    # git_commit
-    # build_project
+    clean
+    sanity_check
+    bump_version
+    patch_changelog
+    git_commit
+    build_project
     upload_to_pypi
     git_push
 }
