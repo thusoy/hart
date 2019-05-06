@@ -10,6 +10,7 @@ install_requires = [
     'jinja2',
     'paramiko',
     'pyyaml',
+    'toml',
 ]
 
 version_file = os.path.join(os.path.dirname(__file__), 'hart', 'version.py')

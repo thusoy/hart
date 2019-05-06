@@ -4,7 +4,7 @@ import hashlib
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
-from .. import DEBIAN_VERSIONS
+from ..constants import DEBIAN_VERSIONS
 from .base import BaseLibcloudProvider
 
 
