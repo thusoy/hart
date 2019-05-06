@@ -32,18 +32,28 @@ class EC2Provider(BaseLibcloudProvider):
             security_groups=None):
         size = self.get_size(size)
         image = self.get_image(debian_codename)
-        kwargs = {}
-        if zone:
-            kwargs['location'] = self.get_location(zone)
+        if not zone:
+            raise ValueError('You must specify the ec2 availability zone')
+        if subnet:
+            subnets = self.driver.ex_list_subnets(subnet_ids=[subnet])
+        else:
+            subnets = self.driver.ex_list_subnets(filters={'availability-zone': 'us-west-1a'})
+
+        if len(subnets) != 1:
+            raise ValueError('More than one subnet in availability zone, specify'
+                ' which one to use: %s' % (', '.join(s.id for s in subnets)))
+
+        subnet = subnets[0]
+
         node = self.driver.create_node(
             name=minion_id,
             size=size,
             image=image,
+            location=self.get_location(zone),
             ex_keyname=auth_key,
             ex_userdata=cloud_init,
             ex_security_group_ids=security_groups,
             ex_subnet=subnet,
-            **kwargs
         )
         return node
 
