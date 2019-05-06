@@ -1,0 +1,31 @@
+#!/bin/bash
+
+main () {
+    set -e
+    sanity_check
+    create_virtualenv
+    install_requirements
+}
+
+sanity_check () {
+    which python3 >/dev/null \
+        || (
+            echo "You have to install python3 first"
+            exit 1
+            )
+}
+
+create_virtualenv () {
+    if [ -d venv ]; then
+        return
+    fi
+    virtualenv venv -p $(which python3)
+}
+
+install_requirements () {
+    ./venv/bin/pip install --no-dependencies -r dev-requirements.txt
+}
+
+if [[ $BASH_SOURCE = $0 ]]; then
+    main
+fi
