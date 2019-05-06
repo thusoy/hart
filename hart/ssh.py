@@ -61,7 +61,7 @@ def log_action(action, start_time):
 def connect_to_droplet(ip, client_ssh_key, username):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(IgnorePolicy())
-    timeout = 45
+    timeout = 90
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
