@@ -20,10 +20,11 @@ create_virtualenv () {
         return
     fi
     virtualenv venv -p $(which python3)
+    ./venv/bin/pip install -U pip
 }
 
 install_requirements () {
-    ./venv/bin/pip install --no-dependencies -r dev-requirements.txt
+    ./venv/bin/pip install -r dev-requirements.txt
 }
 
 if [[ $BASH_SOURCE = $0 ]]; then
