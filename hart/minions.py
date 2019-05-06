@@ -1,15 +1,9 @@
 #!./venv/bin/python
 
-import argparse
 import base64
-import binascii
-import contextlib
 import datetime
-import getpass
-import hashlib
 import json
 import os
-import pwd
 import subprocess
 import sys
 import time
@@ -17,7 +11,6 @@ import traceback
 from collections import namedtuple
 
 import yaml
-from libcloud.compute.types import Provider, NodeState
 from jinja2 import Template
 
 from .ssh import get_verified_ssh_client, ssh_run_command
@@ -104,7 +97,6 @@ def create_minion(
 
 
 def get_master_pubkey():
-    return 'foo'
     with open('/etc/salt/pki/master/master.pub') as fh:
         return fh.read()
 
