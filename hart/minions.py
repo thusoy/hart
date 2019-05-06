@@ -177,7 +177,7 @@ def check_existing_minion(minion_id):
 
     existing_categories = minions.keys()
     if existing_categories:
-        should_continue = raw_input('Existing minions matching %s were found in %s, overwrite? [y/N]' % (
+        should_continue = input('Existing minions matching %s were found in %s, overwrite? [y/N]' % (
             minion_id, ', '.join(existing_categories)))
         return should_continue == 'y'
 
