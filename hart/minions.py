@@ -104,9 +104,9 @@ def create_node(
 
     key_name = build_ssh_key_name(minion_id)
 
-    # if not check_existing_minion(minion_id):
-    #     print('Existing minions were found and did want to overwrite, aborting')
-    #     return
+    if not check_existing_minion(minion_id):
+        print('Existing minions were found and did want to overwrite, aborting')
+        return
 
     with provider.create_temp_ssh_key(key_name) as (ssh_key, auth_key):
         print('have temp key!')
