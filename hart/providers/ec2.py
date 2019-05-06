@@ -37,7 +37,7 @@ class EC2Provider(BaseLibcloudProvider):
         if subnet:
             subnets = self.driver.ex_list_subnets(subnet_ids=[subnet])
         else:
-            subnets = self.driver.ex_list_subnets(filters={'availability-zone': 'us-west-1a'})
+            subnets = self.driver.ex_list_subnets(filters={'availability-zone': zone})
 
         if len(subnets) != 1:
             raise ValueError('More than one subnet in availability zone, specify'
