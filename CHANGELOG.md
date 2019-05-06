@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Fixed
+- Fix crash when creating node with duplicate name.
+- Increase initial connect timeout from 45s to 90s.
+
+
 0.4.1 - 2019-05-06
 ------------------
 
