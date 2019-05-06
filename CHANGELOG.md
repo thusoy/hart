@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Added
+- Make it optional to specify EC2 subnet when there's only one.
+
+## Fixed
+- Restored a check that prevents overwriting existing minions.
+
+
 0.3.4 - 2019-05-06
 ------------------
 
