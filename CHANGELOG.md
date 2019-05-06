@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Fixed
+- Error when cleaning up authorized_keys on ec2.
+
+
+0.3.3 - 2019-05-06
+------------------
+
+Yanked.
+
+
 0.3.2 - 2019-05-06
 ------------------
 

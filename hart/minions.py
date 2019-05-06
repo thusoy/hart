@@ -216,7 +216,10 @@ def verify_minion_connection(client, minion_id, username):
     # Also test that the master can reach the minion
     subprocess.check_call(['salt', minion_id, 'test.ping'])
 
-    ssh_run_command(client, 'rm /%s/.ssh/authorized_keys' % username)
+    authorized_keys_path = '/root/.ssh/authorized_keys'
+    if username != 'root':
+        authorized_keys_path = '/home/%s/.ssh/authorized_keys' % username
+    ssh_run_command(client, 'rm %s' % authorized_keys_path)
 
 
 def get_cloud_init_template(template_name='minion.sh'):
