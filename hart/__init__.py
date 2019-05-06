@@ -40,7 +40,11 @@ def create_minion(
         debian_codename='stretch',
         tags=None,
         private_networking=False,
-        minion_config=None):
+        minion_config=None,
+        zone=None,
+        subnet=None,
+        security_groups=None,
+        ):
     ssh_canary = base64.b64encode(os.urandom(30)).decode('utf-8')
     cloud_init_template = get_cloud_init_template()
     master_pubkey = get_master_pubkey()
@@ -68,16 +72,25 @@ def create_minion(
     with provider.create_temp_ssh_key(key_name) as (ssh_key, auth_key):
         print('have temp key!')
         node = None
+        kwargs = {}
+        if size:
+            kwargs['size'] = size
+        if zone:
+            kwargs['zone'] = zone
+        if subnet:
+            kwargs['subnet'] = subnet
+        if security_groups:
+            kwargs['security_groups'] = security_groups
         try:
             node = provider.create_node(
                 minion_id,
                 region,
-                size,
                 debian_codename,
                 auth_key,
                 cloud_init,
                 private_networking,
-                tags)
+                tags,
+                **kwargs)
             node = provider.wait_for_public_ip(node)
             print('Node running at %s' % node.public_ips[0])
 

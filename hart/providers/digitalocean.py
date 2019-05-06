@@ -18,12 +18,13 @@ class DOProvider(BaseLibcloudProvider):
     def create_node(self,
             minion_id,
             region,
-            size,
             debian_codename,
             auth_key,
             cloud_init,
             private_networking,
-            tags):
+            tags,
+            size='s-1vcpu-1gb',
+            **kwargs):
         key_fingerprint = pubkey_to_fingerprint(auth_key.pubkey)
         size = self.get_size(size)
         image = self.get_image(debian_codename)
