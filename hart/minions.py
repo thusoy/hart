@@ -53,6 +53,7 @@ def create_minion(
         traceback.print_exc()
         sys.stderr.write('Destroying node since it failed to connect\n')
         hart_node.provider.destroy_node(hart_node.node)
+        raise
 
 
 def connect_minion(hart_node):
@@ -139,6 +140,7 @@ def create_node(
             if node:
                 sys.stderr.write('Destroying node since it failed initialization\n')
                 provider.destroy_node(node)
+            raise
 
 
 def destroy_minion(minion_id, provider):
