@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Fixed
+- Permissions error on create-minion on ec2.
+
+
 0.3.1 - 2019-05-06
 ------------------
 

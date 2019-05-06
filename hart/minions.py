@@ -67,7 +67,7 @@ def connect_minion(hart_node):
         print(minion_pubkey)
         trust_minion_key(hart_node.minion_id, minion_pubkey)
         print('Minion added: %s' % hart_node.public_ip)
-        verify_minion_connection(client, hart_node.minion_id)
+        verify_minion_connection(client, hart_node.minion_id, username)
 
 
 def create_node(
@@ -201,11 +201,14 @@ def trust_minion_key(minion_id, minion_pubkey):
         os.remove(pre_key_path)
 
 
-def verify_minion_connection(client, minion_id):
+def verify_minion_connection(client, minion_id, username):
     # The restart is needed since the minion might have attempted connecting to
     # the salt master before the key got trusted and thus might not be ready to
     # respond to a ping from the master
-    ssh_run_command(client, 'salt-call test.ping && service salt-minion restart', timeout=15)
+    prefix = 'sudo ' if username != 'root' else ''
+    ssh_run_command(client,
+        '{0}salt-call test.ping && {0}service salt-minion restart'.format(prefix),
+        timeout=15)
 
     # Give the minion some time to start before attempting another ping
     time.sleep(5)
@@ -213,7 +216,7 @@ def verify_minion_connection(client, minion_id):
     # Also test that the master can reach the minion
     subprocess.check_call(['salt', minion_id, 'test.ping'])
 
-    ssh_run_command(client, 'rm /root/.ssh/authorized_keys')
+    ssh_run_command(client, 'rm /%s/.ssh/authorized_keys' % username)
 
 
 def get_cloud_init_template(template_name='minion.sh'):
