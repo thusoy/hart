@@ -28,6 +28,9 @@ setup(
     description="Opinionated salt-cloud alternative",
     packages=find_packages(),
     install_requires=install_requires,
+    package_data={
+        'hart': ['cloud-init/*.sh'],
+    },
     classifiers=[
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',

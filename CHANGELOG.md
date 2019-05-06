@@ -8,8 +8,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELEASED -
 ------------------
 
-# Added
+## Added
 - `build_provider_from_file` to simplify loading from config file.
+
+## Fixed
+- Missing cloud-init files.
 
 
 0.1.0 - 2019-05-06
