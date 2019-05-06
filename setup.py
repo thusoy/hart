@@ -9,6 +9,7 @@ install_requires = [
     'apache-libcloud',
     'jinja2',
     'paramiko',
+    'pyyaml',
 ]
 
 version_file = os.path.join(os.path.dirname(__file__), 'hart', 'version.py')
@@ -26,11 +27,6 @@ setup(
     description="Opinionated salt-cloud alternative",
     packages=find_packages(),
     install_requires=install_requires,
-    entry_points={
-        'console_scripts': [
-            'hart = hart.__main__:cli',
-        ]
-    },
     classifiers=[
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
