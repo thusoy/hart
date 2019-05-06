@@ -9,6 +9,13 @@ UNRELEASED -
 ------------------
 
 ## Fixed
+- Error when cleaning up authorized_keys on ec2.
+
+
+0.3.2 - 2019-05-06
+------------------
+
+## Fixed
 - Permissions error on create-minion on ec2.
 
 
