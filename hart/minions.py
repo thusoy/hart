@@ -16,8 +16,61 @@ from jinja2 import Template
 from .ssh import get_verified_ssh_client, ssh_run_command
 from .constants import DEBIAN_VERSIONS
 
+HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary')
+
 
 def create_minion(
+        minion_id,
+        provider,
+        region=None,
+        size=None,
+        salt_branch='latest',
+        debian_codename='stretch',
+        tags=None,
+        private_networking=False,
+        minion_config=None,
+        zone=None,
+        subnet=None,
+        security_groups=None,
+        ):
+    hart_node = create_node(
+        minion_id,
+        provider,
+        region,
+        size,
+        salt_branch,
+        debian_codename,
+        tags,
+        private_networking,
+        minion_config,
+        zone,
+        subnet,
+        security_groups,
+    )
+    try:
+        connect_minion(hart_node)
+    except:
+        traceback.print_exc()
+        sys.stderr.write('Destroying node since it failed to connect\n')
+        hart_node.provider.destroy_node(hart_node.node)
+
+
+def connect_minion(hart_node):
+    username = hart_node.provider.username
+    with get_verified_ssh_client(
+            hart_node.public_ip,
+            hart_node.ssh_key,
+            hart_node.ssh_canary,
+            username) as client:
+        wait_for_cloud_init(client)
+        minion_pubkey = get_minion_pubkey(client, should_sudo=username != 'root')
+        print(minion_pubkey)
+        trust_minion_key(hart_node.minion_id, minion_pubkey)
+        print('Minion added: %s' % hart_node.public_ip)
+        verify_minion_connection(client, hart_node.minion_id)
+
+
+def create_node(
         minion_id,
         provider,
         region=None,
@@ -78,17 +131,9 @@ def create_minion(
                 tags,
                 **kwargs)
             node = provider.wait_for_public_ip(node)
-            print('Node running at %s' % node.public_ips[0])
-
-            username = provider.username
-            with get_verified_ssh_client(node.public_ips[0], ssh_key, ssh_canary, username) as client:
-                wait_for_cloud_init(client)
-                minion_pubkey = get_minion_pubkey(client, should_sudo=username != 'root')
-                print(minion_pubkey)
-                # trust_minion_key(minion_id, minion_pubkey)
-                # print('Minion added: %s' % node.public_ips[0])
-                # verify_minion_connection(client, minion_id)
-                raise ValueError('stopping')
+            public_ip = node.public_ips[0]
+            print('Node running at %s' % public_ip)
+            return HartNode(minion_id, public_ip, node, provider, ssh_key, ssh_canary)
         except:
             traceback.print_exc()
             if node:

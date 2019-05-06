@@ -8,8 +8,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELASED -
 ------------------
 
+## Changed
+- Split `create_minion` -> (`create_node`, `connect_minion`) to enable running steps in between.
+
 ## Added
 - `destroy_minion`, `destroy_node` and `disconnect_minion`.
+
 
 0.2.0 - 2019-05-06
 ------------------
