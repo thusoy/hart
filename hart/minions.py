@@ -96,6 +96,26 @@ def create_minion(
                 provider.destroy_node(node)
 
 
+def destroy_minion(minion_id, provider):
+    disconnect_minion(minion_id)
+    destroy_node(minion_id, provider)
+
+
+def disconnect_minion(minion_id):
+    print('Deleting the salt minion %s' % minion_id)
+    subprocess.check_call([
+        'salt-key',
+        '--delete=%s' % minion_id,
+        '--yes',
+    ])
+
+
+def destroy_node(minion_id, provider):
+    print('Destroying node')
+    node = provider.get_node(minion_id)
+    provider.destroy_node(node)
+
+
 def get_master_pubkey():
     with open('/etc/salt/pki/master/master.pub') as fh:
         return fh.read()

@@ -82,3 +82,11 @@ class BaseLibcloudProvider(abc.ABC):
 
     def destroy_node(self, node):
         self.driver.destroy_node(node)
+
+
+    def get_node(self, node_id):
+        for node in self.driver.list_nodes():
+            if node_id in (node.id, node.name):
+                return node
+
+        raise ValueError('No node with id %s found' % node_id)

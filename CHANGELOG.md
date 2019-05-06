@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELASED -
+------------------
+
+## Added
+- `destroy_minion`, `destroy_node` and `disconnect_minion`.
+
 0.2.0 - 2019-05-06
 ------------------
 
