@@ -30,16 +30,21 @@ class EC2Provider(BaseLibcloudProvider):
             zone=None,
             subnet=None,
             security_groups=None):
-        size = self.get_size(size)
-        image = self.get_image(debian_codename)
         if not zone:
             raise ValueError('You must specify the ec2 availability zone')
-        if subnet:
-            subnets = self.driver.ex_list_subnets(subnet_ids=[subnet])
-        else:
-            subnets = self.driver.ex_list_subnets(filters={'availability-zone': zone})
 
-        if len(subnets) != 1:
+        size = self.get_size(size)
+        image = self.get_image(debian_codename)
+
+        subnet_ids = [subnet] if subnet else None
+        subnets = self.driver.ex_list_subnets(subnet_ids=subnet_ids,
+            filters={'availability-zone': zone})
+
+        if not subnets and subnet:
+            raise ValueError('No subnet matching %s in %s' % (subnet, zone))
+        elif not subnets:
+            raise ValueError('No available subnets in %s' % zone)
+        elif len(subnets) > 1:
             raise ValueError('More than one subnet in availability zone, specify'
                 ' which one to use: %s' % (', '.join(s.id for s in subnets)))
 
