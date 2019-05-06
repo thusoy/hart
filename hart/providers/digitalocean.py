@@ -10,7 +10,7 @@ from .base import BaseLibcloudProvider
 
 class DOProvider(BaseLibcloudProvider):
 
-    def __init__(self, token):
+    def __init__(self, token, **kwargs):
         constructor = get_driver(Provider.DIGITAL_OCEAN)
         self.driver = constructor(token, api_version='v2')
 

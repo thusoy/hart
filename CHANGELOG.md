@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Fixed
+- Constructor bug for DO provider.
+
+
 0.3.0 - 2019-05-06
 ------------------
 
