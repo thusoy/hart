@@ -231,7 +231,7 @@ def get_cloud_init_template(template_name='minion.sh'):
 
 
 def build_ssh_key_name(minion_id):
-    current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M')
+    current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
     return 'temp-for-%s-at-%s' % (minion_id, current_date)
 
 
