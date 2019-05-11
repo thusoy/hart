@@ -110,7 +110,6 @@ def create_node(
         return
 
     with provider.create_temp_ssh_key(key_name) as (ssh_key, auth_key):
-        print('have temp key!')
         node = None
         kwargs = {}
         if size:
