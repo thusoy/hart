@@ -84,7 +84,7 @@ def wait_for_verified_ssh_canary(client, ssh_canary, should_sudo):
         # The remove is just a matter of cleanup, the canary isn't sensitive
         _, stdout, stderr = client.exec_command('cat /tmp/ssh-canary && {0}rm /tmp/ssh-canary'.format('sudo ' if should_sudo else ''), timeout=3)
         if stderr.channel.recv_exit_status() != 0:
-            print('No ssh canary yet, waiting')
+            print('No ssh canary yet, waiting (%s)' % ''.join(stderr).strip())
             time.sleep(1)
             continue
 
