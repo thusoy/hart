@@ -50,7 +50,6 @@ def create_minion(
     try:
         connect_minion(hart_node)
     except:
-        traceback.print_exc()
         sys.stderr.write('Destroying node since it failed to connect\n')
         hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
         raise
