@@ -1,6 +1,7 @@
 import abc
 import contextlib
 import time
+import json
 
 import paramiko
 from libcloud.compute.base import NodeAuthSSHKey
@@ -80,7 +81,7 @@ class BaseLibcloudProvider(abc.ABC):
         raise ValueError('Location %s not found' % location_id)
 
 
-    def destroy_node(self, node):
+    def destroy_node(self, node, extra=None):
         self.driver.destroy_node(node)
 
 
@@ -90,3 +91,26 @@ class BaseLibcloudProvider(abc.ABC):
                 return node
 
         raise ValueError('No node with id %s found' % node_id)
+
+
+    def wait_for_init_script(self, client, extra=None):
+        # Creds to https://stackoverflow.com/a/14158100 for a way to get the pid
+        _, stdout, stderr = client.exec_command('echo $$ && exec tail -f /var/log/cloud-init-output.log')
+        tail_pid = int(stdout.readline())
+        for line in stdout:
+            print(line, end='')
+            if line.startswith('Cloud-init') and ' finished ' in line:
+                stdout.channel.close()
+                client.exec_command('kill %d' % tail_pid)
+                break
+
+        for line in stderr:
+            print('Cloud-init stderr: %s' % line.strip())
+
+        _, stdout, stderr = client.exec_command('cat /run/cloud-init/result.json', timeout=3)
+        if stdout.channel.recv_exit_status() != 0:
+            raise ValueError('Failed to get cloud-init status')
+
+        cloud_init_result = json.loads(''.join(stdout))
+        if cloud_init_result['v1']['errors']:
+            raise ValueError('cloud-init failed: %s' % ', '.join(cloud_init_result['v1']['errors']))

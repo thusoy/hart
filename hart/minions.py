@@ -16,7 +16,7 @@ from jinja2 import Template
 from .ssh import get_verified_ssh_client, ssh_run_command
 from .constants import DEBIAN_VERSIONS
 
-HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary')
+HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary node_extra')
 
 
 def create_minion(
@@ -52,7 +52,7 @@ def create_minion(
     except:
         traceback.print_exc()
         sys.stderr.write('Destroying node since it failed to connect\n')
-        hart_node.provider.destroy_node(hart_node.node)
+        hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
         raise
 
 
@@ -63,7 +63,7 @@ def connect_minion(hart_node):
             hart_node.ssh_key,
             hart_node.ssh_canary,
             username) as client:
-        wait_for_cloud_init(client)
+        hart_node.provider.wait_for_init_script(client, hart_node.node_extra)
         minion_pubkey = get_minion_pubkey(client, should_sudo=username != 'root')
         print(minion_pubkey)
         trust_minion_key(hart_node.minion_id, minion_pubkey)
@@ -122,7 +122,7 @@ def create_node(
         if security_groups:
             kwargs['security_groups'] = security_groups
         try:
-            node = provider.create_node(
+            node, extra = provider.create_node(
                 minion_id,
                 region,
                 debian_codename,
@@ -134,7 +134,7 @@ def create_node(
             node = provider.wait_for_public_ip(node)
             public_ip = node.public_ips[0]
             print('Node running at %s' % public_ip)
-            return HartNode(minion_id, public_ip, node, provider, ssh_key, ssh_canary)
+            return HartNode(minion_id, public_ip, node, provider, ssh_key, ssh_canary, extra)
         except:
             traceback.print_exc()
             if node:
@@ -234,26 +234,6 @@ def get_cloud_init_template(template_name='minion.sh'):
 def build_ssh_key_name(minion_id):
     current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M')
     return 'temp-for-%s-at-%s' % (minion_id, current_date)
-
-
-def wait_for_cloud_init(client):
-    # Creds to https://stackoverflow.com/a/14158100 for a way to get the pid
-    _, stdout, stderr = client.exec_command('echo $$ && exec tail -f /var/log/cloud-init-output.log')
-    tail_pid = int(stdout.readline())
-    for line in stdout:
-        print(line, end='')
-        if line.startswith('Cloud-init') and ' finished ' in line:
-            stdout.channel.close()
-            client.exec_command('kill %d' % tail_pid)
-            break
-
-    _, stdout, stderr = client.exec_command('cat /run/cloud-init/result.json', timeout=3)
-    if stdout.channel.recv_exit_status() != 0:
-        raise ValueError('Failed to get cloud-init status')
-
-    cloud_init_result = json.loads(''.join(stdout))
-    if cloud_init_result['v1']['errors']:
-        raise ValueError('cloud-init failed: %s' % ', '.join(cloud_init_result['v1']['errors']))
 
 
 def get_minion_pubkey(client, should_sudo):

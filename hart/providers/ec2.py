@@ -60,7 +60,7 @@ class EC2Provider(BaseLibcloudProvider):
             ex_security_group_ids=security_groups,
             ex_subnet=subnet,
         )
-        return node
+        return node, None
 
 
     def create_remote_ssh_key(self, key_name, ssh_key, public_key):

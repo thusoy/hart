@@ -95,3 +95,5 @@ openssl rsa -in /etc/salt/pki/minion/minion.pem -pubout -out /etc/salt/pki/minio
 
 # Install the core packages needed
 apt_get_noninteractive install salt-minion
+
+echo 'Hart init script complete'

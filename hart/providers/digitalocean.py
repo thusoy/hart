@@ -34,7 +34,7 @@ class DOProvider(BaseLibcloudProvider):
             'private_networking': private_networking,
             'tags': tags,
         })
-        return node
+        return node, None
 
 
     def get_image(self, debian_codename):
