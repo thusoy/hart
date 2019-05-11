@@ -114,3 +114,7 @@ class BaseLibcloudProvider(abc.ABC):
         cloud_init_result = json.loads(''.join(stdout))
         if cloud_init_result['v1']['errors']:
             raise ValueError('cloud-init failed: %s' % ', '.join(cloud_init_result['v1']['errors']))
+
+
+    def post_ssh_cleanup(self, hart_node):
+        pass

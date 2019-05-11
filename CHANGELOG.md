@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+------------------
+
+## Changed
+- EC2 now creates a temporary security group to use for the initial connection. Adding a security
+  group for steady-state operation will have to be done manually at a later stage.
+
 
 0.4.2 - 2019-05-06
 ------------------

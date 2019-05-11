@@ -11,6 +11,8 @@ install_requires = [
     'paramiko',
     'pyyaml',
     'toml',
+    'ifaddr',
+    'boto3',
 ]
 
 version_file = os.path.join(os.path.dirname(__file__), 'hart', 'version.py')

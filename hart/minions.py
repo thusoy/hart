@@ -68,6 +68,7 @@ def connect_minion(hart_node):
         trust_minion_key(hart_node.minion_id, minion_pubkey)
         print('Minion added: %s' % hart_node.public_ip)
         verify_minion_connection(client, hart_node.minion_id, username)
+        hart_node.provider.post_ssh_cleanup(hart_node)
 
 
 def create_node(
@@ -117,8 +118,6 @@ def create_node(
             kwargs['zone'] = zone
         if subnet:
             kwargs['subnet'] = subnet
-        if security_groups:
-            kwargs['security_groups'] = security_groups
         try:
             node, extra = provider.create_node(
                 minion_id,
