@@ -12,6 +12,9 @@ UNRELEASED -
   group for steady-state operation will have to be done manually at a later stage.
 - `destroy_node` now only takes in a node as returned by `create_node`.
 
+## Removed
+- `create_node` no longer accepts the `security_groups` parameter.
+
 
 0.4.2 - 2019-05-06
 ------------------
