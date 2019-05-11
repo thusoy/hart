@@ -136,13 +136,15 @@ def create_node(
             traceback.print_exc()
             if node:
                 sys.stderr.write('Destroying node since it failed initialization\n')
-                provider.destroy_node(node)
+                provider.destroy_node(node, extra)
             raise
 
 
 def destroy_minion(minion_id, provider):
     disconnect_minion(minion_id)
-    destroy_node(minion_id, provider)
+    print('Destroying minion')
+    node = provider.get_node(minion_id)
+    provider.destroy_node(node)
 
 
 def disconnect_minion(minion_id):
@@ -154,10 +156,8 @@ def disconnect_minion(minion_id):
     ])
 
 
-def destroy_node(minion_id, provider):
-    print('Destroying node')
-    node = provider.get_node(minion_id)
-    provider.destroy_node(node)
+def destroy_node(hart_node):
+    hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
 
 
 def get_master_pubkey():

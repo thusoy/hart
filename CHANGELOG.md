@@ -10,6 +10,7 @@ UNRELEASED -
 ## Changed
 - EC2 now creates a temporary security group to use for the initial connection. Adding a security
   group for steady-state operation will have to be done manually at a later stage.
+- `destroy_node` now only takes in a node as returned by `create_node`.
 
 
 0.4.2 - 2019-05-06
