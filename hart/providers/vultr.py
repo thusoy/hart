@@ -33,6 +33,9 @@ class VultrProvider(BaseLibcloudProvider):
         # but a comment here indicates as much:
         # https://discuss.vultr.com/discussion/582/cloud-init-user-data-testing/p3
         script_id = self.create_temp_startup_script(minion_id, cloud_init)
+        node_extra = {
+            'script_id': script_id,
+        }
         node = self.driver.create_node(minion_id, size, image, location, ex_ssh_key_ids=[
             auth_key.id
         ], ex_create_attr={
@@ -59,7 +62,7 @@ class VultrProvider(BaseLibcloudProvider):
             # before they are initialized
             raise ValueError('Failed to start node before timeout')
 
-        return node, script_id
+        return node, node_extra
 
 
     def create_temp_startup_script(self, minion_id, cloud_init):
@@ -77,7 +80,15 @@ class VultrProvider(BaseLibcloudProvider):
         return script_id
 
 
-    def delete_startup_script(self, script_id):
+    def delete_startup_script(self, node_extra):
+        if not node_extra['script_id']:
+            # The delete might be called multiple times on error, prevent it
+            # from trying to delete the script twice
+            return
+
+        script_id = node_extra['script_id']
+        node_extra['script_id'] = None
+
         print('Start up script with id %d' % script_id)
 
         params = {'SCRIPTID': script_id}
@@ -127,10 +138,10 @@ class VultrProvider(BaseLibcloudProvider):
                 raise ValueError('Timed out waiting to delete initializing node: %s' % node.id)
 
 
-    def wait_for_init_script(self, client, script_id):
+    def wait_for_init_script(self, client, node_extra):
         # If we delete the startup script any earlier it might not get onto the node and
         # boot might fail
-        self.delete_startup_script(script_id)
+        self.delete_startup_script(node_extra)
 
         # Creds to https://stackoverflow.com/a/14158100 for a way to get the pid
         _, stdout, stderr = client.exec_command('echo $$ && exec tail -f /tmp/firstboot.log')
