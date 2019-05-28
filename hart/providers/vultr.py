@@ -38,7 +38,7 @@ class VultrProvider(BaseLibcloudProvider):
         ], ex_create_attr={
             'script_id': script_id,
             'notify_activate': False,
-            'enable_private_network': private_networking,
+            'enable_private_network': 'yes' if private_networking else 'no',
             'hostname': minion_id,
             'tag': tags,
         })
