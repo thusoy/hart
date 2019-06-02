@@ -42,7 +42,7 @@ region_to_location_map = {
     'eu-west-2': 'EU (London)',
     'eu-west-3': 'EU (Paris)',
     'eu-north-1': 'EU (Stockholm)',
-    'sa-east-1': 'South America (São Paulo)',
+    'sa-east-1': 'South America (Sao Paulo)',
 }
 
 
