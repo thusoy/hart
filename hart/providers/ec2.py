@@ -223,7 +223,7 @@ class EC2Provider(BaseLibcloudProvider):
 
             memory_value, memory_unit = attributes['memory'].split()
             if memory_unit == 'GiB':
-                memory = float(memory_value)
+                memory = float(memory_value.replace(',', ''))
             else:
                 raise ValueError('unknown memory unit: %s' % memory_unit)
 
