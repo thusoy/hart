@@ -1,5 +1,7 @@
 import ipaddress
+import json
 import datetime
+import sys
 
 import boto3
 import ifaddr
@@ -7,7 +9,41 @@ import paramiko
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
-from .base import BaseLibcloudProvider
+from .base import BaseLibcloudProvider, NodeSize
+
+
+# The pricing API is a supreme clusterfuck that requires lots of special care.
+# One particular issue we run into when listing EC2 instance sizes in a given
+# region is that the API doesn't allow you to filter on region, but on
+# "location", which is the human-readable name of the region. There's no API to
+# get the mapping between regions and the name, thus you either have to hardcode
+# it like we do here and be forced to push and update whenever Amazon adds
+# another region, or scrape the
+# https://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region page,
+# which will break if they change the html structure of that page. Opted for the
+# hardcoding here for simplicity.
+region_to_location_map = {
+    'us-east-2': 'US East (Ohio)',
+    'us-east-1': 'US East (N. Virginia)',
+    'us-west-1': 'US West (N. California)',
+    'us-west-2': 'US West (Oregon)',
+    'ap-east-1': 'Asia Pacific (Hong Kong)',
+    'ap-south-1': 'Asia Pacific (Mumbai)',
+    'ap-northeast-3': 'Asia Pacific (Osaka-Local)',
+    'ap-northeast-2': 'Asia Pacific (Seoul)',
+    'ap-southeast-1': 'Asia Pacific (Singapore)',
+    'ap-southeast-2': 'Asia Pacific (Sydney)',
+    'ap-northeast-1': 'Asia Pacific (Tokyo)',
+    'ca-central-1': 'Canada (Central)',
+    'cn-north-1': 'China (Beijing)',
+    'cn-northwest-1': 'China (Ningxia)',
+    'eu-central-1': 'EU (Frankfurt)',
+    'eu-west-1': 'EU (Ireland)',
+    'eu-west-2': 'EU (London)',
+    'eu-west-3': 'EU (Paris)',
+    'eu-north-1': 'EU (Stockholm)',
+    'sa-east-1': 'South America (São Paulo)',
+}
 
 
 class EC2Provider(BaseLibcloudProvider):
@@ -18,9 +54,15 @@ class EC2Provider(BaseLibcloudProvider):
         self.driver = constructor(aws_access_key_id, aws_secret_access_key,
             region=region)
         # Libcloud's EC2 APIs for security groups just fails, thus keep boto
-        # around for EC2-specific stuff
+        # around for some EC2-specific stuff
         self.boto = boto3.client('ec2',
             region_name=region,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+        )
+        self.region = region
+        self.boto_pricing = boto3.client('pricing',
+            region_name='us-east-1',
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
         )
@@ -143,6 +185,59 @@ class EC2Provider(BaseLibcloudProvider):
             self.delete_node_security_group(node, extra)
 
         self.driver.destroy_node(node)
+
+
+    def get_sizes(self):
+        sizes = []
+        location = region_to_location_map[self.region]
+        filters = [
+            {'Field': 'currentGeneration', 'Value': 'Yes', 'Type': 'TERM_MATCH'},
+            {'Field': 'operatingSystem', 'Value': 'Linux', 'Type': 'TERM_MATCH'},
+            {'Field': 'location', 'Value': location, 'Type': 'TERM_MATCH'},
+            {'Field': 'productFamily', 'Value': 'Compute Instance', 'Type': 'TERM_MATCH'},
+        ]
+        response = self.boto_pricing.get_products(
+                ServiceCode='AmazonEC2',
+                Filters=filters,
+        )
+        for stringified_data in response['PriceList']:
+            data = json.loads(stringified_data)
+            attributes = data['product']['attributes']
+            extras = {
+                'family': attributes['instanceFamily'],
+                'network': attributes['networkPerformance'],
+            }
+            if 'cpuFreq' in attributes:
+                extras['cpuFreq'] = attributes['clockSpeed']
+
+            offer = data['terms']['OnDemand'].popitem()[1]
+            price_dimension = offer['priceDimensions'].popitem()[1]
+            price_per_unit = float(price_dimension['pricePerUnit']['USD'])
+            price_unit = price_dimension['unit']
+            if price_unit == 'Hrs':
+                price = price_per_unit * 720
+            else:
+                raise ValueError('Unknown price unit: %s' % price_unit)
+
+            memory_value, memory_unit = attributes['memory'].split()
+            if memory_unit == 'GiB':
+                memory = float(memory_value)
+            else:
+                raise ValueError('unknown memory unit: %s' % memory_unit)
+            sizes.append(NodeSize(
+                attributes['instanceType'],
+                memory,
+                int(attributes['vcpu']),
+                attributes['storage'],
+                price,
+                extras,
+            ))
+
+        # The prices from the AWS API are often 0. We could resort to
+        # using https://ec2instances.info as a backup source for these cases,
+        # but haven't bothered yet.
+        sizes.sort(key=lambda s: (s.monthly_cost, 0, 0) if s.monthly_cost else (sys.maxsize, s.cpu, s.memory))
+        return sizes
 
 
 def get_host_public_ips():

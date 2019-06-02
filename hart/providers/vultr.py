@@ -6,7 +6,7 @@ from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider, NodeState
 from libcloud.utils.py3 import httplib
 
-from .base import BaseLibcloudProvider
+from .base import BaseLibcloudProvider, NodeSize
 
 
 class VultrProvider(BaseLibcloudProvider):
@@ -154,3 +154,19 @@ class VultrProvider(BaseLibcloudProvider):
                 return
 
         raise ValueError('Failed to complete init script: %s' % ''.join(stderr).strip())
+
+
+    def get_sizes(self):
+        sizes = []
+        for size in self.driver.list_sizes():
+            sizes.append(NodeSize(
+                size.id,
+                size.ram/2**10,
+                size.extra['vcpu_count'],
+                '%d GB SSD' % size.disk,
+                size.price,
+                {},
+            ))
+
+        sizes.sort(key=lambda s: s.monthly_cost)
+        return sizes

@@ -2,9 +2,13 @@ import abc
 import contextlib
 import time
 import json
+from collections import namedtuple
 
 import paramiko
 from libcloud.compute.base import NodeAuthSSHKey
+
+
+NodeSize = namedtuple('NodeSize', 'id memory cpu disk monthly_cost extras')
 
 
 class BaseLibcloudProvider(abc.ABC):
@@ -118,3 +122,7 @@ class BaseLibcloudProvider(abc.ABC):
 
     def post_ssh_cleanup(self, hart_node):
         pass
+
+
+    def get_sizes(self):
+        raise NotImplemented()

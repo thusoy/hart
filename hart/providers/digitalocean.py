@@ -5,7 +5,7 @@ from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
 from ..constants import DEBIAN_VERSIONS
-from .base import BaseLibcloudProvider
+from .base import BaseLibcloudProvider, NodeSize
 
 
 class DOProvider(BaseLibcloudProvider):
@@ -43,6 +43,22 @@ class DOProvider(BaseLibcloudProvider):
             if image.extra['slug'] == target_image:
                 return image
         raise ValueError('Image for %s not found' % debian_codename)
+
+
+    def get_sizes(self):
+        sizes = []
+        for size in self.driver.list_sizes():
+            sizes.append(NodeSize(
+                size.name,
+                size.ram/2**10,
+                size.extra['vcpus'],
+                '%d GB SSD' % size.disk,
+                size.price*720,
+                {'regions': size.extra['regions']},
+            ))
+
+        sizes.sort(key=lambda s: s.monthly_cost)
+        return sizes
 
 
 def pubkey_to_fingerprint(pubkey):
