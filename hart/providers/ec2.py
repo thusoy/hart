@@ -9,7 +9,7 @@ import paramiko
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
-from .base import BaseLibcloudProvider, NodeSize
+from .base import BaseLibcloudProvider, NodeSize, Region
 
 
 # The pricing API is a supreme clusterfuck that requires lots of special care.
@@ -60,12 +60,9 @@ class EC2Provider(BaseLibcloudProvider):
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
         )
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
         self.region = region
-        self.boto_pricing = boto3.client('pricing',
-            region_name='us-east-1',
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-        )
 
 
     def generate_ssh_key(self):
@@ -188,6 +185,11 @@ class EC2Provider(BaseLibcloudProvider):
 
 
     def get_sizes(self):
+        pricing = boto3.client('pricing',
+            region_name='us-east-1',
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+        )
         sizes = []
         location = region_to_location_map[self.region]
         filters = [
@@ -196,7 +198,7 @@ class EC2Provider(BaseLibcloudProvider):
             {'Field': 'location', 'Value': location, 'Type': 'TERM_MATCH'},
             {'Field': 'productFamily', 'Value': 'Compute Instance', 'Type': 'TERM_MATCH'},
         ]
-        response = self.boto_pricing.get_products(
+        response = pricing.get_products(
                 ServiceCode='AmazonEC2',
                 Filters=filters,
         )
@@ -224,6 +226,7 @@ class EC2Provider(BaseLibcloudProvider):
                 memory = float(memory_value)
             else:
                 raise ValueError('unknown memory unit: %s' % memory_unit)
+
             sizes.append(NodeSize(
                 attributes['instanceType'],
                 memory,
@@ -238,6 +241,23 @@ class EC2Provider(BaseLibcloudProvider):
         # but haven't bothered yet.
         sizes.sort(key=lambda s: (s.monthly_cost, 0, 0) if s.monthly_cost else (sys.maxsize, s.cpu, s.memory))
         return sizes
+
+
+    def get_regions(self):
+        regions = []
+        for region in self.driver.list_regions():
+
+            # Skip regions inaccessible without extra setup
+            if region.startswith('us-gov-') or region == 'ap-northeast-3' or region.startswith('cn-'):
+                continue
+
+            constructor = get_driver(Provider.EC2)
+            region_provider = constructor(self.aws_access_key_id, self.aws_secret_access_key,
+                region=region)
+            for location in region_provider.list_locations():
+                regions.append(Region(location.name, region_to_location_map[region]))
+        regions.sort(key=lambda r: r.name)
+        return regions
 
 
 def get_host_public_ips():

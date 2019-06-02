@@ -9,6 +9,7 @@ from libcloud.compute.base import NodeAuthSSHKey
 
 
 NodeSize = namedtuple('NodeSize', 'id memory cpu disk monthly_cost extras')
+Region = namedtuple('Region', 'id name')
 
 
 class BaseLibcloudProvider(abc.ABC):
@@ -125,4 +126,13 @@ class BaseLibcloudProvider(abc.ABC):
 
 
     def get_sizes(self):
+        # Very provider specific, implemented individually
         raise NotImplemented()
+
+
+    def get_regions(self):
+        regions = []
+        for location in self.driver.list_locations():
+            regions.append(Region(location.id, location.name))
+        regions.sort(key=lambda r: r.name)
+        return regions
