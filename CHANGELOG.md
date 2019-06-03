@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+------------------
+
+## Fixed
+- EC2 size listing now filters out options that wouldn't be launched by hart, and also ensures all options are shown.
+- Crash when listing EC2 sizes in São Paulo.
+
+
 0.6.0 - 2019-06-02
 ------------------
 
