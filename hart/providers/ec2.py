@@ -197,49 +197,52 @@ class EC2Provider(BaseLibcloudProvider):
             {'Field': 'operatingSystem', 'Value': 'Linux', 'Type': 'TERM_MATCH'},
             {'Field': 'location', 'Value': location, 'Type': 'TERM_MATCH'},
             {'Field': 'productFamily', 'Value': 'Compute Instance', 'Type': 'TERM_MATCH'},
+            {'Field': 'capacityStatus', 'Value': 'Used', 'Type': 'TERM_MATCH'},
+            {'Field': 'preInstalledSw', 'Value': 'NA', 'Type': 'TERM_MATCH'},
+            {'Field': 'tenancy', 'Value': 'Shared', 'Type': 'TERM_MATCH'},
         ]
-        response = pricing.get_products(
+        paginator = pricing.get_paginator('get_products')
+        results = paginator.paginate(
                 ServiceCode='AmazonEC2',
                 Filters=filters,
+                FormatVersion='aws_v1',
         )
-        for stringified_data in response['PriceList']:
-            data = json.loads(stringified_data)
-            attributes = data['product']['attributes']
-            extras = {
-                'family': attributes['instanceFamily'],
-                'network': attributes['networkPerformance'],
-            }
-            if 'cpuFreq' in attributes:
-                extras['cpuFreq'] = attributes['clockSpeed']
+        for response in results:
+            for stringified_data in response['PriceList']:
+                data = json.loads(stringified_data)
+                attributes = data['product']['attributes']
+                extras = {
+                    'family': attributes['instanceFamily'],
+                    'network': attributes['networkPerformance'],
+                }
+                if 'cpuFreq' in attributes:
+                    extras['cpuFreq'] = attributes['clockSpeed']
 
-            offer = data['terms']['OnDemand'].popitem()[1]
-            price_dimension = offer['priceDimensions'].popitem()[1]
-            price_per_unit = float(price_dimension['pricePerUnit']['USD'])
-            price_unit = price_dimension['unit']
-            if price_unit == 'Hrs':
-                price = price_per_unit * 720
-            else:
-                raise ValueError('Unknown price unit: %s' % price_unit)
+                offer = data['terms']['OnDemand'].popitem()[1]
+                price_dimension = offer['priceDimensions'].popitem()[1]
+                price_per_unit = float(price_dimension['pricePerUnit']['USD'])
+                price_unit = price_dimension['unit']
+                if price_unit == 'Hrs':
+                    price = price_per_unit * 720
+                else:
+                    raise ValueError('Unknown price unit: %s' % price_unit)
 
-            memory_value, memory_unit = attributes['memory'].split()
-            if memory_unit == 'GiB':
-                memory = float(memory_value.replace(',', ''))
-            else:
-                raise ValueError('unknown memory unit: %s' % memory_unit)
+                memory_value, memory_unit = attributes['memory'].split()
+                if memory_unit == 'GiB':
+                    memory = float(memory_value.replace(',', ''))
+                else:
+                    raise ValueError('unknown memory unit: %s' % memory_unit)
 
-            sizes.append(NodeSize(
-                attributes['instanceType'],
-                memory,
-                int(attributes['vcpu']),
-                attributes['storage'],
-                price,
-                extras,
-            ))
+                sizes.append(NodeSize(
+                    attributes['instanceType'],
+                    memory,
+                    int(attributes['vcpu']),
+                    attributes['storage'],
+                    price,
+                    extras,
+                ))
 
-        # The prices from the AWS API are often 0. We could resort to
-        # using https://ec2instances.info as a backup source for these cases,
-        # but haven't bothered yet.
-        sizes.sort(key=lambda s: (s.monthly_cost, 0, 0) if s.monthly_cost else (sys.maxsize, s.cpu, s.memory))
+        sizes.sort(key=lambda s: s.monthly_cost)
         return sizes
 
 
