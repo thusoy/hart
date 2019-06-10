@@ -1,6 +1,8 @@
 import contextlib
 import datetime
+import json
 import time
+import subprocess
 
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider, NodeState
@@ -37,6 +39,7 @@ class VultrProvider(BaseLibcloudProvider):
         script_id = self.create_temp_startup_script(minion_id, cloud_init)
         node_extra = {
             'script_id': script_id,
+            'private_networking': private_networking,
         }
         tag = None
         if len(tags) > 1:
@@ -178,3 +181,133 @@ class VultrProvider(BaseLibcloudProvider):
 
         sizes.sort(key=lambda s: s.monthly_cost)
         return sizes
+
+
+    def post_connect(self, hart_node):
+        if not hart_node.node_extra['private_networking']:
+            return
+
+        # For private networking to work for the node it needs to be attached
+        # inside the node too. Thus get the private IP that was assigned from
+        # the API and add it.
+
+        response = self.driver.connection.get('/v1/server/list_ipv4?SUBID=%s' % hart_node.node.id)
+        networks = response.object[hart_node.node.id]
+        ip = None
+        netmask = None
+        for network in networks:
+            if network['type'] == 'private':
+                ip = network['ip']
+                netmask = network['netmask']
+                break
+
+        if ip is None:
+            raise ValueError("Couldn't find private network attached to server")
+
+        # TODO: How did we get the device name for the new private interface?
+        add_ip(hart_node.minion_id, 'ens7|3', ip, netmask, 'private')
+
+
+def add_ip(self, minion_id, current_device_ip, ip, netmask, ip_kind):
+    '''
+    :param minion_id: The minion id
+    :param current_device_ip: An IP the device holds today we can use to identify it.
+    :param ip: The new ip to attach
+    :param ip_kind: The kind of IP to add. 'reserved' or 'private'.
+    '''
+    device_name, next_label = get_network_device_name_for_ip(minion_id, current_device_ip)
+    enable_network_interfaces_d(minion_id)
+    add_ip_to_device(minion_id, ip_kind, next_label, ip, netmask)
+    bring_up_interface_with_label(minion_id, next_label)
+
+
+def get_network_device_name_for_ip(minion_id, current_device_ip):
+    '''
+    Return a tuple (device_name, next_available_label).
+    '''
+    interfaces = get_interfaces(minion_id)
+    return get_device_and_next_label_from_interfaces(interfaces, current_device_ip)
+
+
+def get_interfaces(minion_id):
+    output = subprocess.check_output([
+        'salt',
+        minion_id,
+        'network.interfaces',
+        '--out=json',
+    ]).decode('utf-8')
+    return json.loads(output)[minion_id]
+
+
+def get_device_and_next_label_from_interfaces(interfaces, current_device_ip):
+    device_name = None
+    for name, interface in interfaces.items():
+        current_device_labels = set()
+        for address in interface.get('inet', []):
+            label = address.get('label')
+            if label:
+                current_device_labels.add(label)
+
+            if address['address'] != current_device_ip:
+                continue
+
+            device_name = name
+
+        if device_name:
+            break
+
+    if device_name is None:
+        raise ValueError('Could not find network device with ip %s' %
+            current_device_ip)
+
+    next_label_num = 0
+    next_label = '%s:%d' % (device_name, next_label_num)
+    while next_label in current_device_labels:
+        next_label_num += 1
+        next_label = '%s:%d' % (device_name, next_label_num)
+
+    return device_name, next_label
+
+
+def enable_network_interfaces_d(minion_id):
+    subprocess.check_call([
+        'salt',
+        minion_id,
+        'file.replace',
+        '/etc/network/interfaces',
+        '^#source /etc/network/interfaces.d/*$',
+        'source /etc/network/interfaces.d/*',
+        'append_if_not_found=True',
+    ])
+
+
+def add_ip_to_device(minion_id, ip_kind, label, ip, netmask):
+    '''
+    :param ip_kind: What kind of IP this is. Either 'reserved' or 'private'.
+    '''
+    mtu = 1450 if ip_kind == 'private' else None
+    lines = [
+        'auto %s' % label,
+        'iface %s inet static' % label,
+        'address %s' % ip,
+        'netmask %s' % netmask,
+    ]
+    if mtu:
+        lines.append('mtu %d' % mtu)
+
+    subprocess.check_call([
+        'salt',
+        minion_id,
+        'file.write',
+        '/etc/network/interfaces.d/20-hart-%s-ip' % ip_kind,
+        'args="[%s]"' % ', '.join("'%s'" % line for line in lines),
+    ])
+
+
+def bring_up_interface_with_label(minion_id, label):
+    subprocess.check_call([
+        'salt',
+        minion_id,
+        'cmd.run',
+        'ifup %s' % label,
+    ])
