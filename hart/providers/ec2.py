@@ -162,7 +162,7 @@ class EC2Provider(BaseLibcloudProvider):
         return dist_images[-1]
 
 
-    def post_ssh_cleanup(self, hart_node):
+    def post_connect(self, hart_node):
         # Delete the temp security group that allowed ssh
         # Detach the security group from the instance. An instance must have at
         # least one security group, so we attach the VPC default group.

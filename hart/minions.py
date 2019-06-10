@@ -66,7 +66,7 @@ def connect_minion(hart_node):
         trust_minion_key(hart_node.minion_id, minion_pubkey)
         print('Minion added: %s' % hart_node.public_ip)
         verify_minion_connection(client, hart_node.minion_id, username)
-        hart_node.provider.post_ssh_cleanup(hart_node)
+        hart_node.provider.post_connect(hart_node)
 
 
 def create_node(

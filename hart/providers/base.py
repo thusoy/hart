@@ -122,7 +122,7 @@ class BaseLibcloudProvider(abc.ABC):
             raise ValueError('cloud-init failed: %s' % ', '.join(cloud_init_result['v1']['errors']))
 
 
-    def post_ssh_cleanup(self, hart_node):
+    def post_connect(self, hart_node):
         pass
 
 
