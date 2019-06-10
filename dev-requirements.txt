@@ -1,6 +1,7 @@
 -e .
 
 pytest
+pytest-cov
 pylint
 twine
 watchdog
