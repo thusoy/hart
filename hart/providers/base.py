@@ -95,7 +95,8 @@ class BaseLibcloudProvider(abc.ABC):
             if node_id in (node.id, node.name):
                 return node
 
-        raise ValueError('No node with id %s found' % node_id)
+        raise ValueError('No node with id %s found in provider %s' % (
+            node_id, self.__class__.__name__)
 
 
     def wait_for_init_script(self, client, extra=None):
