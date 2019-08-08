@@ -43,6 +43,7 @@ region_to_location_map = {
     'eu-west-3': 'EU (Paris)',
     'eu-north-1': 'EU (Stockholm)',
     'sa-east-1': 'South America (Sao Paulo)',
+    'me-south-1': 'Middle East (Bahrain)',
 }
 
 
