@@ -248,17 +248,19 @@ class EC2Provider(BaseLibcloudProvider):
 
     def get_regions(self):
         regions = []
-        for region in self.driver.list_regions():
-
-            # Skip regions inaccessible without extra setup
-            if region.startswith('us-gov-') or region == 'ap-northeast-3' or region.startswith('cn-'):
-                continue
-
-            constructor = get_driver(Provider.EC2)
-            region_provider = constructor(self.aws_access_key_id, self.aws_secret_access_key,
-                region=region)
-            for location in region_provider.list_locations():
-                regions.append(Region(location.name, region_to_location_map[region]))
+        response = self.boto.describe_regions()
+        for region in response['Regions']:
+            region_boto = boto3.client('ec2',
+                region_name=region['RegionName'],
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+            )
+            az_response = region_boto.describe_availability_zones()
+            for zone in az_response['AvailabilityZones']:
+                # Don't fail if we don't know the name of the region to avoid
+                # crashing for new regions we don't know about yet
+                region_name = region_to_location_map.get(zone['RegionName'], 'Unknown')
+                regions.append(Region(zone['ZoneName'], region_name))
         regions.sort(key=lambda r: r.name)
         return regions
 
