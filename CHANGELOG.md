@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+
+UNRELEASED -
+------------------
+
+## Fixed
+- Make ap-east-1 and me-south-1 work for EC2.
+
+## Changed
+- Fully replaced libcloud with boto3 for EC2.
+
+
 0.6.1 - 2019-06-03
 ------------------
 
