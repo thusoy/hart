@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Fixed
+- Crash when destroying node by id.
+
+
 0.7.1 - 2019-08-09
 ------------------
 

@@ -87,6 +87,8 @@ class BaseLibcloudProvider(abc.ABC):
 
 
     def get_node(self, node_id):
+        if not isinstance(node_id, str):
+            node_id = node_id.name
         for node in self.driver.list_nodes():
             if node_id in (node.id, node.name):
                 return node

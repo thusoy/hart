@@ -137,8 +137,14 @@ class EC2Provider(BaseLibcloudProvider):
         return node, temp_security_group
 
 
-    def get_node(self, old_node):
-        instance_response = self.ec2.describe_instances(InstanceIds=[old_node.id])
+    def get_node(self, node):
+        if isinstance(node, str):
+            instance_response = self.ec2.describe_instances(Filters=[{
+                'Name': 'tag:Name',
+                'Values': [node],
+            }])
+        else:
+            instance_response = self.ec2.describe_instances(InstanceIds=[node.id])
         instance = instance_response['Reservations'][0]['Instances'][0]
         public_ip = instance.get('PublicIpAddress')
         public_ips = [public_ip] if public_ip else []
