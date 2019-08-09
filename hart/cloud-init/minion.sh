@@ -22,7 +22,7 @@ echo '{{ ssh_canary }}' > /tmp/ssh-canary
 
 # Start conntrack to ensure connections started during init are let through the
 # firewall when it is activated later
-modprobe nf_conntrack_ipv4 nf_conntrack_ipv6
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
 # Add the salt debian repo key, silencing an inappropriate warning from apt-key
 APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - <<EOF
