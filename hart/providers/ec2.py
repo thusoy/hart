@@ -10,7 +10,7 @@ from libcloud.compute.base import Node
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
-from .base import BaseLibcloudProvider, NodeSize, Region
+from .base import BaseProvider, NodeSize, Region
 
 
 # The pricing API is a supreme clusterfuck that requires lots of special care.
@@ -48,7 +48,7 @@ region_to_location_map = {
 }
 
 
-class EC2Provider(BaseLibcloudProvider):
+class EC2Provider(BaseProvider):
     username = 'admin'
 
     def __init__(self, aws_access_key_id, aws_secret_access_key, region):

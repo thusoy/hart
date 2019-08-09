@@ -6,7 +6,8 @@ from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider, NodeState
 from libcloud.utils.py3 import httplib
 
-from .base import BaseLibcloudProvider, NodeSize
+from .base import NodeSize
+from .libcloud import BaseLibcloudProvider
 
 
 class VultrProvider(BaseLibcloudProvider):

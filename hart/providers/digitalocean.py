@@ -5,7 +5,8 @@ from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
 from ..constants import DEBIAN_VERSIONS
-from .base import BaseLibcloudProvider, NodeSize
+from .base import NodeSize
+from .libcloud import BaseLibcloudProvider
 
 
 class DOProvider(BaseLibcloudProvider):
