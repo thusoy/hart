@@ -137,7 +137,7 @@ class EC2Provider(BaseLibcloudProvider):
         return node, temp_security_group
 
 
-    def get_updated_node(self, old_node):
+    def get_node(self, old_node):
         instance_response = self.ec2.describe_instances(InstanceIds=[old_node.id])
         instance = instance_response['Reservations'][0]['Instances'][0]
         public_ip = instance.get('PublicIpAddress')

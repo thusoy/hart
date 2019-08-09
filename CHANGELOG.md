@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Fixed
+- EC2 couldn't destroy a node.
+
+
 0.7.0 - 2019-08-09
 ------------------
 

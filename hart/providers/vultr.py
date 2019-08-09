@@ -53,7 +53,7 @@ class VultrProvider(BaseLibcloudProvider):
         while time.time() - start_time < 180:
             print('Waiting for node to boot (%s)' % node.state)
             time.sleep(2)
-            node = self.get_updated_node(node)
+            node = self.get_node(node)
             if node.state != NodeState.PENDING:
                 print('Node in state %s, continuing' % node.state)
                 break
@@ -130,7 +130,7 @@ class VultrProvider(BaseLibcloudProvider):
         start_time = time.time()
         while True:
             time.sleep(3)
-            node = self.get_updated_node(node)
+            node = self.get_node(node)
             if node.state == NodeState.RUNNING:
                 self.driver.destroy_node(node)
                 break

@@ -57,19 +57,11 @@ class BaseLibcloudProvider(abc.ABC):
         start_time = time.time()
         while True:
             time.sleep(2)
-            node = self.get_updated_node(node)
+            node = self.get_node(node)
             if node.public_ips and node.public_ips[0] != '0.0.0.0':
                 return node
             if time.time() - start_time > timeout:
                 raise ValueError('Timed out waiting for node IP: %s' % node.id)
-
-
-    def get_updated_node(self, old_node):
-        for node in self.driver.list_nodes():
-            if node.id == old_node.id:
-                return node
-
-        raise ValueError('Updated node for %s not found' % old_node.id)
 
 
     def get_size(self, size_name):
