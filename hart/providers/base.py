@@ -42,8 +42,12 @@ class BaseLibcloudProvider(abc.ABC):
         try:
             yield local_key, auth_key
         finally:
-            print('Destroying %s ssh key' % self.driver.type)
-            self.driver.delete_key_pair(remote_key)
+            print('Destroying %s ssh key' % self.__class__.__name__)
+            self.destroy_remote_ssh_key(remote_key)
+
+
+    def destroy_remote_ssh_key(self, remote_key):
+        self.driver.delete_key_pair(remote_key)
 
 
     def wait_for_public_ip(self, node):

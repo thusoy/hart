@@ -6,6 +6,7 @@ import sys
 import boto3
 import ifaddr
 import paramiko
+from libcloud.compute.base import Node
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
@@ -51,12 +52,7 @@ class EC2Provider(BaseLibcloudProvider):
     username = 'admin'
 
     def __init__(self, aws_access_key_id, aws_secret_access_key, region):
-        constructor = get_driver(Provider.EC2)
-        self.driver = constructor(aws_access_key_id, aws_secret_access_key,
-            region=region)
-        # Libcloud's EC2 APIs for security groups just fails, thus keep boto
-        # around for some EC2-specific stuff
-        self.boto = boto3.client('ec2',
+        self.ec2 = boto3.client('ec2',
             region_name=region,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
@@ -69,6 +65,16 @@ class EC2Provider(BaseLibcloudProvider):
     def generate_ssh_key(self):
         # EC2 only supports RSA for ssh keys
         return paramiko.RSAKey.generate(2048)
+
+
+    def create_remote_ssh_key(self, key_name, ssh_key, public_key):
+        import_response = self.ec2.import_key_pair(KeyName=key_name, PublicKeyMaterial=public_key)
+        assert import_response['ResponseMetadata']['HTTPStatusCode'] == 200
+        return key_name, key_name
+
+
+    def destroy_remote_ssh_key(self, remote_key):
+        self.ec2.delete_key_pair(KeyName=remote_key)
 
 
     def create_node(self,
@@ -88,9 +94,10 @@ class EC2Provider(BaseLibcloudProvider):
         size = self.get_size(size)
         image = self.get_image(debian_codename)
 
-        subnet_ids = [subnet] if subnet else None
-        subnets = self.driver.ex_list_subnets(subnet_ids=subnet_ids,
-            filters={'availability-zone': zone})
+        subnet_ids = [subnet] if subnet else []
+        subnet_response = self.ec2.describe_subnets(SubnetIds=subnet_ids,
+            Filters=[{'Name': 'availability-zone', 'Values': [zone]}])
+        subnets = subnet_response['Subnets']
 
         if not subnets and subnet:
             raise ValueError('No subnet matching %s in %s' % (subnet, zone))
@@ -101,25 +108,51 @@ class EC2Provider(BaseLibcloudProvider):
                 ' which one to use: %s' % (', '.join(s.id for s in subnets)))
 
         subnet = subnets[0]
-
         temp_security_group = self.create_temp_security_group(minion_id)
-
-        node = self.driver.create_node(
-            name=minion_id,
-            size=size,
-            image=image,
-            location=self.get_location(zone),
-            ex_keyname=auth_key,
-            ex_userdata=cloud_init,
-            ex_security_group_ids=temp_security_group,
-            ex_subnet=subnet,
+        create_response = self.ec2.run_instances(
+            ImageId=image['ImageId'],
+            InstanceType=size,
+            KeyName=auth_key,
+            Placement={'AvailabilityZone': zone},
+            UserData=cloud_init,
+            MinCount=1,
+            MaxCount=1,
+            NetworkInterfaces=[{
+                'AssociatePublicIpAddress': True,
+                'DeleteOnTermination': True,
+                'DeviceIndex': 0,
+                'SubnetId': subnet['SubnetId'],
+                'Groups': [temp_security_group],
+            }],
+            TagSpecifications=[{
+                'ResourceType': 'instance',
+                'Tags': [{'Key': 'Name', 'Value': minion_id}],
+            }],
         )
+        instance = create_response['Instances'][0]
+
+        node = Node(id=instance['InstanceId'], name=minion_id, state=instance['State']['Name'],
+            public_ips=[], private_ips=[instance['PrivateIpAddress']],
+            driver=self.ec2, created_at=instance['LaunchTime'], extra=None)
         return node, temp_security_group
 
 
+    def get_updated_node(self, old_node):
+        instance_response = self.ec2.describe_instances(InstanceIds=[old_node.id])
+        instance = instance_response['Reservations'][0]['Instances'][0]
+        public_ip = instance.get('PublicIpAddress')
+        public_ips = [public_ip] if public_ip else []
+        name = None
+        for tag in instance['Tags']:
+            if tag['Key'] == 'Name':
+                name = tag['Value']
+                break
+        return Node(id=instance['InstanceId'], name=name, state=instance['State']['Name'],
+            public_ips=public_ips, private_ips=[instance['PrivateIpAddress']],
+            driver=self.ec2, created_at=instance['LaunchTime'], extra=None)
+
+
     def create_temp_security_group(self, minion_id):
-        # libcloud's ex_create_security_group fails with signature errors, thus
-        # ignore libcloud for this and use boto instead.
         current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
         name = 'temp-for-%s-%s' % (minion_id, current_date)
 
@@ -129,13 +162,13 @@ class EC2Provider(BaseLibcloudProvider):
             raise ValueError('Could not find any public IPs on the current '
                 'host and thus wont be able to connect to the new node')
 
-        group = self.boto.create_security_group(
+        group = self.ec2.create_security_group(
             GroupName=name,
             Description='Temporary group for initial saltmaster ssh initialization',
         )
         group_id = group['GroupId']
 
-        self.boto.authorize_security_group_ingress(
+        self.ec2.authorize_security_group_ingress(
             GroupId=group_id,
             IpPermissions=[{
                 'IpProtocol': 'tcp',
@@ -148,18 +181,14 @@ class EC2Provider(BaseLibcloudProvider):
         return group_id
 
 
-    def create_remote_ssh_key(self, key_name, ssh_key, public_key):
-        remote_key = self.driver.import_key_pair_from_string(key_name, public_key)
-        return remote_key, key_name
-
-
     def get_image(self, debian_codename):
         official_debian_account = '379101102735'
-        all_images = self.driver.list_images(ex_owner=official_debian_account, ex_filters={
-            'architecture': 'x86_64',
-        })
-        dist_images = [image for image in all_images if image.name.startswith('debian-%s-' % debian_codename)]
-        dist_images.sort(key=lambda i: i.name)
+        image_response = self.ec2.describe_images(Owners=[official_debian_account], Filters=[{
+            'Name': 'architecture',
+            'Values': ['x86_64'],
+        }])
+        dist_images = [image for image in image_response['Images'] if image['Name'].startswith('debian-%s-' % debian_codename)]
+        dist_images.sort(key=lambda i: i['Name'])
         return dist_images[-1]
 
 
@@ -172,17 +201,21 @@ class EC2Provider(BaseLibcloudProvider):
 
     def delete_node_security_group(self, node, group_id):
         print('Deleting temporary security group')
-        response = self.boto.describe_security_groups(GroupNames=['default'])
+        response = self.ec2.describe_security_groups(GroupNames=['default'])
         default_group = response['SecurityGroups'][0]
-        self.boto.modify_instance_attribute(InstanceId=node.id, Groups=[default_group['GroupId']])
-        response = self.boto.delete_security_group(GroupId=group_id)
+        self.ec2.modify_instance_attribute(InstanceId=node.id, Groups=[default_group['GroupId']])
+        response = self.ec2.delete_security_group(GroupId=group_id)
 
 
     def destroy_node(self, node, extra=None):
         if extra is not None:
             self.delete_node_security_group(node, extra)
 
-        self.driver.destroy_node(node)
+        self.ec2.terminate_instances(InstanceIds=[node.id])
+
+
+    def get_size(self, size_name):
+        return size_name
 
 
     def get_sizes(self):
@@ -249,7 +282,7 @@ class EC2Provider(BaseLibcloudProvider):
 
     def get_regions(self):
         regions = []
-        response = self.boto.describe_regions()
+        response = self.ec2.describe_regions()
         for region in response['Regions']:
             region_boto = boto3.client('ec2',
                 region_name=region['RegionName'],
