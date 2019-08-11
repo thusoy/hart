@@ -83,6 +83,13 @@ class EC2Provider(BaseProvider):
         parser.add_argument('-z', '--zone', help='AWS availability zone')
         parser.add_argument('--subnet',
             help='AWS: The subnet to launch the node in')
+        parser.add_argument('--volume-size', type=int,
+            help='The size of the EBS drive')
+        parser.add_argument('--volume-type',
+            choices=('standard', 'io1', 'gp2', 'sc1', 'st1'),
+            help='The type of EBS drive to mount')
+        parser.add_argument('--volume-iops', type=int,
+            help='How many IOPS to provision (only applies to io1 volumes)')
 
 
     def add_list_regions_arguments(self, parser):
@@ -132,6 +139,27 @@ class EC2Provider(BaseProvider):
 
         subnet = subnets[0]
         temp_security_group = self.create_temp_security_group(minion_id)
+
+        block_devices = None
+        if 'volume_type' in kwargs or 'volume_size' in kwargs:
+            ebs = {}
+            iops = kwargs.get('volume_iops')
+            if iops:
+                ebs['Iops'] = iops
+
+            volume_type = kwargs.get('volume_type')
+            if volume_type:
+                ebs['VolumeType'] = volume_type
+
+            # The debian images automatically expand the filesystem to match on boot
+            volume_size = kwargs.get('volume_size')
+            if volume_size:
+                ebs['VolumeSize'] = volume_size
+            block_devices = [{
+                'DeviceName': image['RootDeviceName'],
+                'Ebs': ebs,
+            }]
+
         create_response = self.ec2.run_instances(
             ImageId=image['ImageId'],
             InstanceType=size,
@@ -140,6 +168,7 @@ class EC2Provider(BaseProvider):
             UserData=cloud_init,
             MinCount=1,
             MaxCount=1,
+            BlockDeviceMappings=block_devices,
             NetworkInterfaces=[{
                 'AssociatePublicIpAddress': True,
                 'DeleteOnTermination': True,
