@@ -218,9 +218,11 @@ class EC2Provider(BaseProvider):
             if tag['Key'] == 'Name':
                 name = tag['Value']
                 break
+        private_ip = instance.get('PrivateIpAddress')
+        private_ips = [private_ip] if private_ip else []
         return Node(id=instance['InstanceId'], name=name, state=instance['State']['Name'],
-            public_ips=public_ips, private_ips=[instance['PrivateIpAddress']],
-            driver=self.ec2, created_at=instance['LaunchTime'], extra=None)
+            public_ips=public_ips, private_ips=private_ips, driver=self.ec2,
+            created_at=instance['LaunchTime'], extra=None)
 
 
     def create_temp_security_group(self, minion_id):
