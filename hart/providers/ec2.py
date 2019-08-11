@@ -2,6 +2,7 @@ import ipaddress
 import json
 import datetime
 import sys
+import time
 
 import boto3
 import ifaddr
@@ -166,7 +167,20 @@ class EC2Provider(BaseProvider):
                 'Values': [node],
             }])
         else:
-            instance_response = self.ec2.describe_instances(InstanceIds=[node.id])
+            # This can fail if called right after run_instances, retry if not found
+            start_time = time.time()
+            exception = None
+            while time.time() - start_time < 20:
+                try:
+                    instance_response = self.ec2.describe_instances(InstanceIds=[node.id])
+                    break
+                except Exception as e:
+                    exception = e
+                    time.sleep(1)
+            else:
+                # no break
+                raise ValueError('Instance not found') from exception
+
         instance = instance_response['Reservations'][0]['Instances'][0]
         public_ip = instance.get('PublicIpAddress')
         public_ips = [public_ip] if public_ip else []
