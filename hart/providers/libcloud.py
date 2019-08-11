@@ -34,7 +34,7 @@ class BaseLibcloudProvider(BaseProvider):
         raise ValueError('Location %s not found' % location_id)
 
 
-    def destroy_node(self, node, extra=None):
+    def destroy_node(self, node, extra=None, **kwargs):
         self.driver.destroy_node(node)
 
 
@@ -49,7 +49,7 @@ class BaseLibcloudProvider(BaseProvider):
             node_id, self.__class__.__name__))
 
 
-    def get_regions(self):
+    def get_regions(self, **kwargs):
         regions = []
         for location in self.driver.list_locations():
             regions.append(Region(location.id, location.name))

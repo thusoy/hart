@@ -29,8 +29,7 @@ def create_minion(
         tags=None,
         private_networking=False,
         minion_config=None,
-        zone=None,
-        subnet=None,
+        **kwargs
         ):
     hart_node = create_node(
         minion_id,
@@ -42,8 +41,7 @@ def create_minion(
         tags,
         private_networking,
         minion_config,
-        zone,
-        subnet,
+        **kwargs,
     )
     try:
         connect_minion(hart_node)
@@ -79,8 +77,7 @@ def create_node(
         tags=None,
         private_networking=False,
         minion_config=None,
-        zone=None,
-        subnet=None,
+        **kwargs
         ):
     ssh_canary = base64.b64encode(os.urandom(30)).decode('utf-8')
     cloud_init_template = get_cloud_init_template()
@@ -108,13 +105,8 @@ def create_node(
 
     with provider.create_temp_ssh_key(key_name) as (ssh_key, auth_key):
         node = None
-        kwargs = {}
         if size:
             kwargs['size'] = size
-        if zone:
-            kwargs['zone'] = zone
-        if subnet:
-            kwargs['subnet'] = subnet
         try:
             node, extra = provider.create_node(
                 minion_id,

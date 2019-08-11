@@ -6,5 +6,4 @@ from .minions import (
     connect_minion,
     disconnect_minion,
 )
-from .config import build_provider_from_file
 from .constants import DEBIAN_VERSIONS

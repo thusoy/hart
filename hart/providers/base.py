@@ -19,6 +19,26 @@ class BaseProvider(abc.ABC):
         pass
 
 
+    def add_create_minion_arguments(self, parser):
+        '''Override this to provide kwargs to create_node'''
+        pass
+
+
+    def add_destroy_minion_arguments(self, parser):
+        '''Override this to provide kwargs to destroy_node'''
+        pass
+
+
+    def add_list_regions_arguments(self, parser):
+        '''Override this to provide kwargs to get_regions'''
+        pass
+
+
+    def add_list_sizes_arguments(self, parser):
+        '''Override this to provide kwargs to get_sizes'''
+        pass
+
+
     def generate_ssh_key(self): # pylint: disable=no-self-use
         # paramiko doesn't yet support creating Ed25519 keys :'(
         return paramiko.ECDSAKey.generate()
@@ -96,7 +116,7 @@ class BaseProvider(abc.ABC):
         raise NotImplemented()
 
 
-    def destroy_node(self, node, extra=None):
+    def destroy_node(self, node, extra=None, **kwargs):
         raise NotImplemented()
 
 
@@ -105,11 +125,11 @@ class BaseProvider(abc.ABC):
         raise NotImplemented()
 
 
-    def get_regions(self):
+    def get_regions(self, **kwargs):
         raise NotImplemented()
 
 
-    def get_sizes(self):
+    def get_sizes(self, **kwargs):
         raise NotImplemented()
 
 

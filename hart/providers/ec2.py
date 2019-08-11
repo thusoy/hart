@@ -51,20 +51,37 @@ region_to_location_map = {
 class EC2Provider(BaseProvider):
     username = 'admin'
 
-    def __init__(self, aws_access_key_id, aws_secret_access_key, region):
-        self.ec2 = boto3.client('ec2',
-            region_name=region,
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-        )
+    def __init__(self, aws_access_key_id, aws_secret_access_key, region=None):
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.region = region
+        self._ec2 = None
+
+
+    @property
+    def ec2(self):
+        # Construct this lazily to prevent it region from having to be
+        # specified to list regions or sizes
+        if self._ec2:
+            return self._ec2
+
+        self._ec2 = boto3.client('ec2',
+            region_name=self.region,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+        )
+        return self._ec2
 
 
     def generate_ssh_key(self):
         # EC2 only supports RSA for ssh keys
         return paramiko.RSAKey.generate(2048)
+
+
+    def add_create_minion_arguments(self, parser):
+        parser.add_argument('-z', '--zone', help='AWS availability zone')
+        parser.add_argument('--subnet',
+            help='AWS: The subnet to launch the node in')
 
 
     def create_remote_ssh_key(self, key_name, ssh_key, public_key):
@@ -86,14 +103,15 @@ class EC2Provider(BaseProvider):
             private_networking,
             tags,
             size='t3.micro',
-            zone=None,
-            subnet=None):
+            **kwargs):
+        zone = kwargs.get('zone')
         if not zone:
             raise ValueError('You must specify the ec2 availability zone')
 
         size = self.get_size(size)
         image = self.get_image(debian_codename)
 
+        subnet = kwargs.get('subnet')
         subnet_ids = [subnet] if subnet else []
         subnet_response = self.ec2.describe_subnets(SubnetIds=subnet_ids,
             Filters=[{'Name': 'availability-zone', 'Values': [zone]}])
@@ -213,7 +231,7 @@ class EC2Provider(BaseProvider):
         response = self.ec2.delete_security_group(GroupId=group_id)
 
 
-    def destroy_node(self, node, extra=None):
+    def destroy_node(self, node, extra=None, **kwargs):
         if extra is not None:
             self.delete_node_security_group(node, extra)
 
@@ -224,7 +242,7 @@ class EC2Provider(BaseProvider):
         return size_name
 
 
-    def get_sizes(self):
+    def get_sizes(self, **kwargs):
         pricing = boto3.client('pricing',
             region_name='us-east-1',
             aws_access_key_id=self.aws_access_key_id,
@@ -286,8 +304,13 @@ class EC2Provider(BaseProvider):
         return sizes
 
 
-    def get_regions(self):
+    def get_regions(self, **kwargs):
         regions = []
+        # If not region is specified, pick an arbitrary one that is probably
+        # active (ie added before March 20, 2019)
+        if not self.region:
+            self.region = 'us-west-1'
+
         response = self.ec2.describe_regions()
         for region in response['Regions']:
             region_boto = boto3.client('ec2',

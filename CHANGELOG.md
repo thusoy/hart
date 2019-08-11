@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Added
+- Extensible CLI for to create and destroy minions, and listing regions and sizes.
+
+
 0.7.2 - 2019-08-09
 ------------------
 

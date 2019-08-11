@@ -46,7 +46,7 @@ class DOProvider(BaseLibcloudProvider):
         raise ValueError('Image for %s not found' % debian_codename)
 
 
-    def get_sizes(self):
+    def get_sizes(self, **kwargs):
         sizes = []
         for size in self.driver.list_sizes():
             sizes.append(NodeSize(
