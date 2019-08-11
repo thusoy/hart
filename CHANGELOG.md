@@ -8,8 +8,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELEASED -
 ------------------
 
+## Fixed
+- The EC2 provider will set instance tags if given in key=val format.
+
 ## Added
 - Extensible CLI for to create and destroy minions, and listing regions and sizes.
+- Ability to customize EC2 root volume size.
 
 
 0.7.2 - 2019-08-09
