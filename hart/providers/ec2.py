@@ -160,6 +160,15 @@ class EC2Provider(BaseProvider):
                 'Ebs': ebs,
             }]
 
+        tag_specifications = [{'Key': 'Name', 'Value': minion_id}]
+        for tag in tags:
+            if not '=' in tag:
+                raise ValueError('EC2 requires tags to be key=val (was %r)' % tag)
+            key, val = tag.split('=', 1)
+            tag_specifications.append({
+                'Key': key,
+                'Value': val,
+            })
         create_response = self.ec2.run_instances(
             ImageId=image['ImageId'],
             InstanceType=size,
@@ -178,7 +187,7 @@ class EC2Provider(BaseProvider):
             }],
             TagSpecifications=[{
                 'ResourceType': 'instance',
-                'Tags': [{'Key': 'Name', 'Value': minion_id}],
+                'Tags': tag_specifications,
             }],
         )
         instance = create_response['Instances'][0]
