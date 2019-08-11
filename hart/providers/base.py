@@ -141,6 +141,6 @@ class BaseProvider(abc.ABC):
             cloud_init,
             private_networking,
             tags,
-            size='s-1vcpu-1gb',
+            size,
             **kwargs):
         raise NotImplemented()
