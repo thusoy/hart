@@ -84,6 +84,10 @@ class EC2Provider(BaseProvider):
             help='AWS: The subnet to launch the node in')
 
 
+    def add_list_regions_arguments(self, parser):
+        parser.add_argument('-z', '--include-zones', action='store_true')
+
+
     def create_remote_ssh_key(self, key_name, ssh_key, public_key):
         import_response = self.ec2.import_key_pair(KeyName=key_name, PublicKeyMaterial=public_key)
         assert import_response['ResponseMetadata']['HTTPStatusCode'] == 200
@@ -304,7 +308,7 @@ class EC2Provider(BaseProvider):
         return sizes
 
 
-    def get_regions(self, **kwargs):
+    def get_regions(self, include_zones=False, **kwargs):
         regions = []
         # If not region is specified, pick an arbitrary one that is probably
         # active (ie added before March 20, 2019)
@@ -313,17 +317,22 @@ class EC2Provider(BaseProvider):
 
         response = self.ec2.describe_regions()
         for region in response['Regions']:
-            region_boto = boto3.client('ec2',
-                region_name=region['RegionName'],
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-            )
-            az_response = region_boto.describe_availability_zones()
-            for zone in az_response['AvailabilityZones']:
-                # Don't fail if we don't know the name of the region to avoid
-                # crashing for new regions we don't know about yet
-                region_name = region_to_location_map.get(zone['RegionName'], 'Unknown')
-                regions.append(Region(zone['ZoneName'], region_name))
+            if include_zones:
+                region_boto = boto3.client('ec2',
+                    region_name=region['RegionName'],
+                    aws_access_key_id=self.aws_access_key_id,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                )
+                az_response = region_boto.describe_availability_zones()
+                for zone in az_response['AvailabilityZones']:
+                    # Don't fail if we don't know the name of the region to avoid
+                    # crashing for new regions we don't know about yet
+                    region_name = region_to_location_map.get(zone['RegionName'], 'Unknown')
+                    regions.append(Region(zone['ZoneName'], region_name))
+            else:
+                region_id = region['RegionName']
+                name = region_to_location_map.get(region_id, 'Unknown')
+                regions.append(Region(region_id, name))
         regions.sort(key=lambda r: r.name)
         return regions
 
