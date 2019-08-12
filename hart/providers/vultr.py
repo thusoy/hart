@@ -190,7 +190,6 @@ class VultrProvider(BaseLibcloudProvider):
         # For private networking to work for the node it needs to be attached
         # inside the node too. Thus get the private IP that was assigned from
         # the API and add it.
-
         response = self.driver.connection.get('/v1/server/list_ipv4?SUBID=%s' % hart_node.node.id)
         networks = response.object[hart_node.node.id]
         ip = None
@@ -204,11 +203,13 @@ class VultrProvider(BaseLibcloudProvider):
         if ip is None:
             raise ValueError("Couldn't find private network attached to server")
 
-        # TODO: How did we get the device name for the new private interface?
-        add_ip(hart_node.minion_id, 'ens7|3', ip, netmask, 'private')
+        interface = 'ens7'
+        enable_network_interfaces_d(hart_node.minion_id)
+        add_ip_to_device(hart_node.minion_id, 'private', interface, ip, netmask)
+        bring_up_interface_with_label(hart_node.minion_id, interface)
 
 
-def add_ip(self, minion_id, current_device_ip, ip, netmask, ip_kind):
+def add_ip(minion_id, current_device_ip, ip, netmask, ip_kind):
     '''
     :param minion_id: The minion id
     :param current_device_ip: An IP the device holds today we can use to identify it.
@@ -300,7 +301,7 @@ def add_ip_to_device(minion_id, ip_kind, label, ip, netmask):
         minion_id,
         'file.write',
         '/etc/network/interfaces.d/20-hart-%s-ip' % ip_kind,
-        'args="[%s]"' % ', '.join("'%s'" % line for line in lines),
+        'args=[%s]' % ', '.join("'%s'" % line for line in lines),
     ])
 
 
