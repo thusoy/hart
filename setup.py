@@ -33,6 +33,11 @@ setup(
     package_data={
         'hart': ['cloud-init/*.sh'],
     },
+    entry_points={
+        'console_scripts': [
+            'hart = hart.__main__:main',
+        ]
+    },
     classifiers=[
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
