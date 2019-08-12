@@ -1,0 +1,10 @@
+venv
+tools
+coverage
+dist
+build
+.pytest_cache
+__pycache__
+*.pyc
+*.egg-info
+.git
