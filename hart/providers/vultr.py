@@ -120,7 +120,7 @@ class VultrProvider(BaseLibcloudProvider):
         raise ValueError('Debian %s image not found' % debian_codename)
 
 
-    def destroy_node(self, node, extra=None):
+    def destroy_node(self, node, extra=None, **kwargs):
         if extra is not None:
             self.delete_startup_script(extra)
 

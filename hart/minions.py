@@ -129,11 +129,11 @@ def create_node(
             raise
 
 
-def destroy_minion(minion_id, provider):
+def destroy_minion(minion_id, provider, **kwargs):
     disconnect_minion(minion_id)
     print('Destroying minion')
     node = provider.get_node(minion_id)
-    provider.destroy_node(node)
+    provider.destroy_node(node, **kwargs)
 
 
 def disconnect_minion(minion_id):
