@@ -18,6 +18,13 @@ def main():
 
 
 class HartCLI:
+    def __init__(self):
+        if sys.getfilesystemencoding() == 'ascii':
+            raise ValueError('Your system has incorrect locale settings, '
+                'leading to non-unicode default IO. Set f. ex '
+                'LC_CTYPE=en_US.UTF-8 and PYTHONIOENCODING=utf-8 to fix this.')
+
+
     def get_args(self):
         parser = argparse.ArgumentParser(prog='hart', add_help=False)
 
