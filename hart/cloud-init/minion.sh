@@ -24,8 +24,8 @@ echo '{{ ssh_canary }}' > /tmp/ssh-canary
 # firewall when it is activated later
 modprobe nf_conntrack_ipv4 nf_conntrack_ipv6
 
-# Add the salt debian repo key
-apt-key add - <<EOF
+# Add the salt debian repo key, silencing an inappropriate warning from apt-key
+APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - <<EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v2.0.22 (GNU/Linux)
 
