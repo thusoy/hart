@@ -1,9 +1,10 @@
 import argparse
+import sys
 
 from .config import build_provider_from_file
 from .constants import DEBIAN_VERSIONS
 from .minions import (
-    create_node,
+    create_minion,
     connect_minion,
     destroy_minion,
     destroy_node,

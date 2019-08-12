@@ -25,7 +25,8 @@ class VultrProvider(BaseLibcloudProvider):
             cloud_init,
             private_networking,
             tags,
-            size='201'):
+            size='201',
+            **kwargs):
         size = self.get_size(size)
         image = self.get_image(debian_codename)
         location = self.get_location(region)

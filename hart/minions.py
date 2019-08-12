@@ -41,7 +41,7 @@ def create_minion(
         tags,
         private_networking,
         minion_config,
-        **kwargs,
+        **kwargs
     )
     try:
         connect_minion(hart_node)
