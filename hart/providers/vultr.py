@@ -38,6 +38,12 @@ class VultrProvider(BaseLibcloudProvider):
         node_extra = {
             'script_id': script_id,
         }
+        tag = None
+        if len(tags) > 1:
+            raise ValueError('Can only set a single tag on vultr')
+        elif tags:
+            tag = tags[0]
+
         node = self.driver.create_node(minion_id, size, image, location, ex_ssh_key_ids=[
             auth_key.id
         ], ex_create_attr={
@@ -45,7 +51,7 @@ class VultrProvider(BaseLibcloudProvider):
             'notify_activate': False,
             'enable_private_network': 'yes' if private_networking else 'no',
             'hostname': minion_id,
-            'tag': tags,
+            'tag': tag,
         })
         # Vultr has a race condition where if the ssh key is deleted too early,
         # ie before the node has read it on startup, it won't be available to

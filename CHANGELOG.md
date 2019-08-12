@@ -10,6 +10,7 @@ UNRELEASED -
 
 ## Fixed
 - The EC2 provider will set instance tags if given in key=val format.
+- The Vultr provider doesn't wrap the tag in brackets anymore.
 
 ## Added
 - Extensible CLI for to create and destroy minions, and listing regions and sizes.
