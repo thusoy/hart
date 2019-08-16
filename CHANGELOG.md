@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+------------------
+
+## Fixed
+- Couldn't list sizes with vultr provider.
+
+
 0.8.0 - 2019-08-14
 ------------------
 

@@ -167,7 +167,7 @@ class VultrProvider(BaseLibcloudProvider):
         raise ValueError('Failed to complete init script: %s' % ''.join(stderr).strip())
 
 
-    def get_sizes(self):
+    def get_sizes(self, **kwargs):
         sizes = []
         for size in self.driver.list_sizes():
             sizes.append(NodeSize(
