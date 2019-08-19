@@ -10,6 +10,7 @@ UNRELEASED -
 
 ## Fixed
 - Couldn't list sizes with vultr provider.
+- EC2 failed if not specifying --volume-size or --volume-type.
 
 
 0.8.0 - 2019-08-14

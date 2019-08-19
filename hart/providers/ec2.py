@@ -140,25 +140,26 @@ class EC2Provider(BaseProvider):
         subnet = subnets[0]
         temp_security_group = self.create_temp_security_group(minion_id)
 
-        block_devices = None
-        if 'volume_type' in kwargs or 'volume_size' in kwargs:
+        block_devices = []
+        volume_type = kwargs.get('volume_type')
+        volume_size = kwargs.get('volume_size')
+        if volume_type or volume_size:
             ebs = {}
+            # iops is only supported for io1 volumes and thus can only be specified with --volume-type
             iops = kwargs.get('volume_iops')
             if iops:
                 ebs['Iops'] = iops
 
-            volume_type = kwargs.get('volume_type')
             if volume_type:
                 ebs['VolumeType'] = volume_type
 
             # The debian images automatically expand the filesystem to match on boot
-            volume_size = kwargs.get('volume_size')
             if volume_size:
                 ebs['VolumeSize'] = volume_size
-            block_devices = [{
+            block_devices.append({
                 'DeviceName': image['RootDeviceName'],
                 'Ebs': ebs,
-            }]
+            })
 
         tag_specifications = [{'Key': 'Name', 'Value': minion_id}]
         for tag in tags:
