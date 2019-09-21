@@ -173,6 +173,7 @@ def check_existing_minion(minion_id):
 def trust_minion_key(minion_id, minion_pubkey):
     with open('/etc/salt/pki/master/minions/%s' % minion_id, 'wb') as fh:
         fh.write(minion_pubkey.encode('utf-8'))
+        os.fchmod(fh, 0o644)
 
     # If the minion connected before we trusted the key, remove the duplicate key in minions_pre
     pre_key_path = '/etc/salt/pki/master/minions_pre/%s' % minion_id
