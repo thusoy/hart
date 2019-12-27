@@ -85,6 +85,8 @@ class HartCLI:
             help='Whether to enable private networking on the node')
         parser.add_argument('-d', '--debian-codename', default='stretch', choices=DEBIAN_VERSIONS.keys(),
             help='Which debian version to create. Default: %(default)s')
+        parser.add_argument('--use-py2', action='store_true',
+            help='Use py2 instead of py3 for saltstack.')
 
         parser.set_defaults(action=self.cli_create_minion)
         return parser
@@ -122,6 +124,7 @@ class HartCLI:
         size = kwargs.pop('size')
         private_networking = kwargs.pop('private_networking')
         debian_codename = kwargs.pop('debian_codename')
+        use_py2 = kwargs.pop('use_py2')
         create_minion(
             minion_id,
             provider,
@@ -129,6 +132,7 @@ class HartCLI:
             size,
             private_networking=private_networking,
             debian_codename=debian_codename,
+            use_py2=use_py2,
             **kwargs
         )
 

@@ -74,7 +74,7 @@ apt-get update
 apt_get_noninteractive install apt-transport-https
 
 # Add the salt debian repo
-echo 'deb https://repo.saltstack.com/apt/debian/{{ debian_version }}/amd64/{{ salt_branch }} {{ debian_codename }} main' > /etc/apt/sources.list.d/saltstack.list
+echo 'deb {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
 
 # Update the packages and upgrade whatever we have locally
 apt-get update
