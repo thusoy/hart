@@ -134,8 +134,10 @@ def create_node(
 
 def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
     debian_version = DEBIAN_VERSIONS[debian_codename]
-    if use_py2 and debian_version >= 10:
-        raise ValueError('saltstack py2 is only compatible with debian buster and newer')
+    if use_py2 and debian_version > 9:
+        raise ValueError('saltstack py2 is only available for debian stretch and older')
+    if not use_py2 and debian_version < 9:
+        raise ValueError('saltstack py3 is only available for debian stretch and newer')
     return 'https://repo.saltstack.com/%s/debian/%s/amd64/%s %s main' % (
         'apt' if use_py2 else 'py3', debian_version, salt_branch, debian_codename)
 
