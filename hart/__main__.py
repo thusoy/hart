@@ -83,7 +83,8 @@ class HartCLI:
             help='Tags to add to the new node, comma-separated.')
         parser.add_argument('-p', '--private-networking', action='store_true',
             help='Whether to enable private networking on the node')
-        parser.add_argument('-d', '--debian-codename', default='buster', choices=DEBIAN_VERSIONS.keys(),
+        parser.add_argument('-d', '--debian-codename',
+            choices=DEBIAN_VERSIONS.keys(), default='buster',
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')
@@ -151,7 +152,13 @@ class HartCLI:
         for size in provider.get_sizes(**kwargs):
             formatted_memory = '%d' % size.memory if size.memory >= 1 else '%.1f' % size.memory
             print('%d vCPUs, %s GB RAM, %s (%s, $%d/month) %s' % (
-                size.cpu, formatted_memory, size.disk, size.id, size.monthly_cost, size.extras or ''))
+                size.cpu,
+                formatted_memory,
+                size.disk,
+                size.id,
+                size.monthly_cost,
+                size.extras or ''),
+            )
 
 
     def cli_list_regions(self, args):
