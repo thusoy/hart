@@ -90,6 +90,9 @@ class EC2Provider(BaseProvider):
             help='The type of EBS drive to mount')
         parser.add_argument('--volume-iops', type=int,
             help='How many IOPS to provision (only applies to io1 volumes)')
+        parser.add_argument('--connection-gateway',
+            help="If the saltmaster's outbound IP can't be automatically detected, "
+            "specify the CIDR range to allow through the firewall to the minion here.")
 
 
     def add_list_regions_arguments(self, parser):
@@ -138,7 +141,7 @@ class EC2Provider(BaseProvider):
                 ' which one to use: %s' % (', '.join(s.id for s in subnets)))
 
         subnet = subnets[0]
-        temp_security_group = self.create_temp_security_group(minion_id)
+        temp_security_group = self.create_temp_security_group(minion_id, kwargs.get('connection_gateway'))
 
         block_devices = []
         volume_type = kwargs.get('volume_type')
@@ -235,12 +238,17 @@ class EC2Provider(BaseProvider):
             created_at=instance['LaunchTime'], extra=None)
 
 
-    def create_temp_security_group(self, minion_id):
+    def create_temp_security_group(self, minion_id, connection_gateway):
         current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
         name = 'temp-for-%s-%s' % (minion_id, current_date)
 
-        # Get the external IPs for the current host
-        external_ips = list(get_host_public_ips())
+        # Get the external IPs for the current host to let through the firewall
+        # to the minion for the initial ssh connection
+        if connection_gateway:
+            external_ips = [connection_gateway]
+        else:
+            external_ips = list(get_host_public_ips())
+
         if not external_ips:
             raise ValueError('Could not find any public IPs on the current '
                 'host and thus wont be able to connect to the new node')
