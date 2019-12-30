@@ -317,6 +317,9 @@ class EC2Provider(BaseProvider):
 
 
     def get_sizes(self, **kwargs):
+        if self.region is None:
+            raise ValueError('Must specify region to list available ec2 image sizes')
+
         pricing = boto3.client('pricing',
             region_name='us-east-1',
             aws_access_key_id=self.aws_access_key_id,
