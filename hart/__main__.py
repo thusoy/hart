@@ -83,7 +83,7 @@ class HartCLI:
             help='Tags to add to the new node, comma-separated.')
         parser.add_argument('-p', '--private-networking', action='store_true',
             help='Whether to enable private networking on the node')
-        parser.add_argument('-d', '--debian-codename', default='stretch', choices=DEBIAN_VERSIONS.keys(),
+        parser.add_argument('-d', '--debian-codename', default='buster', choices=DEBIAN_VERSIONS.keys(),
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')
