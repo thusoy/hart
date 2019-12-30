@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELEASED -
 ------------------
 
+## Added
+- Support for buster. This is now the default distribution if none is specified.
+
 ## Fixed
 - Couldn't list sizes with vultr provider.
 - EC2 failed if not specifying --volume-size or --volume-type.
