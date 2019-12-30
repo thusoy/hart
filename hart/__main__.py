@@ -126,16 +126,19 @@ class HartCLI:
         private_networking = kwargs.pop('private_networking')
         debian_codename = kwargs.pop('debian_codename')
         use_py2 = kwargs.pop('use_py2')
-        create_minion(
-            minion_id,
-            provider,
-            region,
-            size,
-            private_networking=private_networking,
-            debian_codename=debian_codename,
-            use_py2=use_py2,
-            **kwargs
-        )
+        try:
+            create_minion(
+                minion_id,
+                provider,
+                region,
+                size,
+                private_networking=private_networking,
+                debian_codename=debian_codename,
+                use_py2=use_py2,
+                **kwargs
+            )
+        except KeyboardInterrupt:
+            print('Aborted by Ctrl-C or SIGINT, stopping')
 
 
     def cli_destroy_minion(self, args):
