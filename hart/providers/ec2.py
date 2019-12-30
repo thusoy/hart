@@ -12,6 +12,7 @@ from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
 from .base import BaseProvider, NodeSize, Region
+from ..constants import DEBIAN_VERSIONS
 
 
 # The pricing API is a supreme clusterfuck that requires lots of special care.
@@ -90,6 +91,9 @@ class EC2Provider(BaseProvider):
             help='The type of EBS drive to mount')
         parser.add_argument('--volume-iops', type=int,
             help='How many IOPS to provision (only applies to io1 volumes)')
+        parser.add_argument('--connection-gateway',
+            help="If the saltmaster's outbound IP can't be automatically detected, "
+            "specify the CIDR range to allow through the firewall to the minion here.")
 
 
     def add_list_regions_arguments(self, parser):
@@ -138,7 +142,7 @@ class EC2Provider(BaseProvider):
                 ' which one to use: %s' % (', '.join(s.id for s in subnets)))
 
         subnet = subnets[0]
-        temp_security_group = self.create_temp_security_group(minion_id)
+        temp_security_group = self.create_temp_security_group(minion_id, kwargs.get('connection_gateway'))
 
         block_devices = []
         volume_type = kwargs.get('volume_type')
@@ -235,12 +239,17 @@ class EC2Provider(BaseProvider):
             created_at=instance['LaunchTime'], extra=None)
 
 
-    def create_temp_security_group(self, minion_id):
+    def create_temp_security_group(self, minion_id, connection_gateway):
         current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
         name = 'temp-for-%s-%s' % (minion_id, current_date)
 
-        # Get the external IPs for the current host
-        external_ips = list(get_host_public_ips())
+        # Get the external IPs for the current host to let through the firewall
+        # to the minion for the initial ssh connection
+        if connection_gateway:
+            external_ips = [connection_gateway]
+        else:
+            external_ips = list(get_host_public_ips())
+
         if not external_ips:
             raise ValueError('Could not find any public IPs on the current '
                 'host and thus wont be able to connect to the new node')
@@ -265,12 +274,18 @@ class EC2Provider(BaseProvider):
 
 
     def get_image(self, debian_codename):
-        official_debian_account = '379101102735'
+        # The release process for the official debian images changed a bit from
+        # buster and onwards. The owner account changed, and the images changed
+        # from being named debian-<codename>.. to debian-<version>..
+        debian_version = DEBIAN_VERSIONS[debian_codename]
+        is_buster_or_newer = debian_version >= 10
+        official_debian_account = '136693071363' if is_buster_or_newer else '379101102735'
         image_response = self.ec2.describe_images(Owners=[official_debian_account], Filters=[{
             'Name': 'architecture',
             'Values': ['x86_64'],
         }])
-        dist_images = [image for image in image_response['Images'] if image['Name'].startswith('debian-%s-' % debian_codename)]
+        image_prefix = 'debian-%s' % (debian_version if is_buster_or_newer else debian_codename)
+        dist_images = [i for i in image_response['Images'] if i['Name'].startswith(image_prefix)]
         dist_images.sort(key=lambda i: i['Name'])
         return dist_images[-1]
 
@@ -302,6 +317,9 @@ class EC2Provider(BaseProvider):
 
 
     def get_sizes(self, **kwargs):
+        if self.region is None:
+            raise ValueError('Must specify region to list available ec2 image sizes')
+
         pricing = boto3.client('pricing',
             region_name='us-east-1',
             aws_access_key_id=self.aws_access_key_id,

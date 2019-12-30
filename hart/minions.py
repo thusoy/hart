@@ -29,6 +29,7 @@ def create_minion(
         tags=None,
         private_networking=False,
         minion_config=None,
+        use_py2=False,
         **kwargs
         ):
     hart_node = create_node(
@@ -41,6 +42,7 @@ def create_minion(
         tags,
         private_networking,
         minion_config,
+        use_py2,
         **kwargs
     )
     try:
@@ -77,6 +79,7 @@ def create_node(
         tags=None,
         private_networking=False,
         minion_config=None,
+        use_py2=False,
         **kwargs
         ):
     ssh_canary = base64.b64encode(os.urandom(30)).decode('utf-8')
@@ -88,13 +91,13 @@ def create_node(
     if minion_config is not None:
         default_minion_config.update(minion_config)
 
+    saltstack_repo = get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
     cloud_init = cloud_init_template.render(**{
         'minion_config': yaml.dump(default_minion_config),
         'ssh_canary': ssh_canary,
-        'salt_branch': salt_branch,
-        'debian_version': DEBIAN_VERSIONS[debian_codename],
-        'debian_codename': debian_codename,
         'master_pubkey': master_pubkey,
+        'saltstack_repo': saltstack_repo,
+        'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
     })
 
     key_name = build_ssh_key_name(minion_id)
@@ -127,6 +130,16 @@ def create_node(
                 sys.stderr.write('Destroying node since it failed initialization\n')
                 provider.destroy_node(node, extra)
             raise
+
+
+def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
+    debian_version = DEBIAN_VERSIONS[debian_codename]
+    if use_py2 and debian_version > 9:
+        raise ValueError('saltstack py2 is only available for debian stretch and older')
+    if not use_py2 and debian_version < 9:
+        raise ValueError('saltstack py3 is only available for debian stretch and newer')
+    return 'https://repo.saltstack.com/%s/debian/%s/amd64/%s %s main' % (
+        'apt' if use_py2 else 'py3', debian_version, salt_branch, debian_codename)
 
 
 def destroy_minion(minion_id, provider, **kwargs):
@@ -173,7 +186,7 @@ def check_existing_minion(minion_id):
 def trust_minion_key(minion_id, minion_pubkey):
     with open('/etc/salt/pki/master/minions/%s' % minion_id, 'wb') as fh:
         fh.write(minion_pubkey.encode('utf-8'))
-        os.fchmod(fh, 0o644)
+        os.fchmod(fh.fileno(), 0o644)
 
     # If the minion connected before we trusted the key, remove the duplicate key in minions_pre
     pre_key_path = '/etc/salt/pki/master/minions_pre/%s' % minion_id
@@ -197,7 +210,7 @@ def verify_minion_connection(client, minion_id, username):
     prefix = 'sudo ' if username != 'root' else ''
     ssh_run_command(client,
         '{0}salt-call test.ping && {0}service salt-minion restart'.format(prefix),
-        timeout=15)
+        timeout=30)
 
     # Give the minion some time to start before attempting another ping
     time.sleep(5)

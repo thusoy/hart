@@ -83,8 +83,11 @@ class HartCLI:
             help='Tags to add to the new node, comma-separated.')
         parser.add_argument('-p', '--private-networking', action='store_true',
             help='Whether to enable private networking on the node')
-        parser.add_argument('-d', '--debian-codename', default='stretch', choices=DEBIAN_VERSIONS.keys(),
+        parser.add_argument('-d', '--debian-codename',
+            choices=DEBIAN_VERSIONS.keys(), default='buster',
             help='Which debian version to create. Default: %(default)s')
+        parser.add_argument('--use-py2', action='store_true',
+            help='Use py2 instead of py3 for saltstack.')
 
         parser.set_defaults(action=self.cli_create_minion)
         return parser
@@ -122,15 +125,20 @@ class HartCLI:
         size = kwargs.pop('size')
         private_networking = kwargs.pop('private_networking')
         debian_codename = kwargs.pop('debian_codename')
-        create_minion(
-            minion_id,
-            provider,
-            region,
-            size,
-            private_networking=private_networking,
-            debian_codename=debian_codename,
-            **kwargs
-        )
+        use_py2 = kwargs.pop('use_py2')
+        try:
+            create_minion(
+                minion_id,
+                provider,
+                region,
+                size,
+                private_networking=private_networking,
+                debian_codename=debian_codename,
+                use_py2=use_py2,
+                **kwargs
+            )
+        except KeyboardInterrupt:
+            print('Aborted by Ctrl-C or SIGINT, stopping')
 
 
     def cli_destroy_minion(self, args):
@@ -147,7 +155,13 @@ class HartCLI:
         for size in provider.get_sizes(**kwargs):
             formatted_memory = '%d' % size.memory if size.memory >= 1 else '%.1f' % size.memory
             print('%d vCPUs, %s GB RAM, %s (%s, $%d/month) %s' % (
-                size.cpu, formatted_memory, size.disk, size.id, size.monthly_cost, size.extras or ''))
+                size.cpu,
+                formatted_memory,
+                size.disk,
+                size.id,
+                size.monthly_cost,
+                size.extras or ''),
+            )
 
 
     def cli_list_regions(self, args):

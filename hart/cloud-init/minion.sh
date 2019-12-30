@@ -22,7 +22,31 @@ echo '{{ ssh_canary }}' > /tmp/ssh-canary
 
 # Start conntrack to ensure connections started during init are let through the
 # firewall when it is activated later
-modprobe nf_conntrack_ipv4 nf_conntrack_ipv6
+iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
+
+# Make sure apt doesn't prompt for anything
+apt_get_noninteractive () {
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get \
+        --assume-yes \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        $@
+}
+
+{% if wait_for_apt %}
+# On some providers (notably, Vultr) there will be a apt-daily systemd service
+# that will start when the node boots, causing concurrent access problems for
+# this script. Thus wait until other instances are done before continuing, but
+# only do so where the jobs to wait on exists, thus the if check.
+echo 'Waiting for apt startup tasks to finish'
+systemd-run --property="After=apt-daily.service apt-daily-upgrade.service" --wait /bin/true
+{% endif %}
+
+# Update the repo to get updated keys and archives, then install https transport for apt
+# before adding the salt repo using https, and gnupg2 for apt-key
+apt-get update
+apt_get_noninteractive install apt-transport-https gnupg2
 
 # Add the salt debian repo key, silencing an inappropriate warning from apt-key
 APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - <<EOF
@@ -58,23 +82,8 @@ MA===dtMN
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
 
-# Make sure apt doesn't prompt for anything
-apt_get_noninteractive () {
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get \
-        --assume-yes \
-        -o Dpkg::Options::="--force-confdef" \
-        -o Dpkg::Options::="--force-confold" \
-        $@
-}
-
-# Update the repo to get updated keys and archives, then install https transport for apt
-# before adding the salt repo using https
-apt-get update
-apt_get_noninteractive install apt-transport-https
-
 # Add the salt debian repo
-echo 'deb https://repo.saltstack.com/apt/debian/{{ debian_version }}/amd64/{{ salt_branch }} {{ debian_codename }} main' > /etc/apt/sources.list.d/saltstack.list
+echo 'deb {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
 
 # Update the packages and upgrade whatever we have locally
 apt-get update

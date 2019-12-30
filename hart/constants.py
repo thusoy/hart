@@ -1,4 +1,5 @@
 DEBIAN_VERSIONS = {
-    'jessie': 8,
+    'buster': 10,
     'stretch': 9,
+    'jessie': 8,
 }
