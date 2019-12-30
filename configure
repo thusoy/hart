@@ -22,7 +22,7 @@ create_virtualenv () {
         return
     fi
     virtualenv venv -p "$python_binary"
-    ./venv/bin/pip install -U pip
+    ./venv/bin/pip install -U pip setuptools wheel
 }
 
 install_requirements () {
