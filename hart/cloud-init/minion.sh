@@ -24,6 +24,21 @@ echo '{{ ssh_canary }}' > /tmp/ssh-canary
 # firewall when it is activated later
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
+# Make sure apt doesn't prompt for anything
+apt_get_noninteractive () {
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get \
+        --assume-yes \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        $@
+}
+
+# Update the repo to get updated keys and archives, then install https transport for apt
+# before adding the salt repo using https, and gnupg2 for apt-key
+apt-get update
+apt_get_noninteractive install apt-transport-https gnupg2
+
 # Add the salt debian repo key, silencing an inappropriate warning from apt-key
 APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - <<EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -57,21 +72,6 @@ fuBmScum8uQTrEF5+Um5zkwC7EXTdH1co/+/V/fpOtxIg4XO4kcugZefVm5ERfVS
 MA===dtMN
 -----END PGP PUBLIC KEY BLOCK-----
 EOF
-
-# Make sure apt doesn't prompt for anything
-apt_get_noninteractive () {
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get \
-        --assume-yes \
-        -o Dpkg::Options::="--force-confdef" \
-        -o Dpkg::Options::="--force-confold" \
-        $@
-}
-
-# Update the repo to get updated keys and archives, then install https transport for apt
-# before adding the salt repo using https
-apt-get update
-apt_get_noninteractive install apt-transport-https
 
 # Add the salt debian repo
 echo 'deb {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
