@@ -1,5 +1,7 @@
 #!/bin/bash
 
+python_binary=${PYTHON_BINARY:-$(which python3)}
+
 main () {
     set -e
     sanity_check
@@ -19,7 +21,7 @@ create_virtualenv () {
     if [ -d venv ]; then
         return
     fi
-    virtualenv venv -p $(which python3)
+    virtualenv venv -p "$python_binary"
     ./venv/bin/pip install -U pip
 }
 
