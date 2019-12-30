@@ -97,6 +97,7 @@ def create_node(
         'ssh_canary': ssh_canary,
         'master_pubkey': master_pubkey,
         'saltstack_repo': saltstack_repo,
+        'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
     })
 
     key_name = build_ssh_key_name(minion_id)

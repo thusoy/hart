@@ -34,6 +34,15 @@ apt_get_noninteractive () {
         $@
 }
 
+{% if wait_for_apt %}
+# On some providers (notably, Vultr) there will be a apt-daily systemd service
+# that will start when the node boots, causing concurrent access problems for
+# this script. Thus wait until other instances are done before continuing, but
+# only do so where the jobs to wait on exists, thus the if check.
+echo 'Waiting for apt startup tasks to finish'
+systemd-run --property="After=apt-daily.service apt-daily-upgrade.service" --wait /bin/true
+{% endif %}
+
 # Update the repo to get updated keys and archives, then install https transport for apt
 # before adding the salt repo using https, and gnupg2 for apt-key
 apt-get update
