@@ -12,6 +12,7 @@ from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
 from .base import BaseProvider, NodeSize, Region
+from ..constants import DEBIAN_VERSIONS
 
 
 # The pricing API is a supreme clusterfuck that requires lots of special care.
@@ -273,12 +274,18 @@ class EC2Provider(BaseProvider):
 
 
     def get_image(self, debian_codename):
-        official_debian_account = '379101102735'
+        # The release process for the official debian images changed a bit from
+        # buster and onwards. The owner account changed, and the images changed
+        # from being named debian-<codename>.. to debian-<version>..
+        debian_version = DEBIAN_VERSIONS[debian_codename]
+        is_buster_or_newer = debian_version >= 10
+        official_debian_account = '136693071363' if is_buster_or_newer else '379101102735'
         image_response = self.ec2.describe_images(Owners=[official_debian_account], Filters=[{
             'Name': 'architecture',
             'Values': ['x86_64'],
         }])
-        dist_images = [image for image in image_response['Images'] if image['Name'].startswith('debian-%s-' % debian_codename)]
+        image_prefix = 'debian-%s' % (debian_version if is_buster_or_newer else debian_codename)
+        dist_images = [i for i in image_response['Images'] if i['Name'].startswith(image_prefix)]
         dist_images.sort(key=lambda i: i['Name'])
         return dist_images[-1]
 
