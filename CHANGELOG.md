@@ -9,7 +9,12 @@ UNRELEASED -
 ------------------
 
 ## Added
-- Support for buster. This is now the default distribution if none is specified.
+- Support for Debian Buster. This is now the default distribution if none is specified.
+
+## Changed
+- Saltstack will now default to use Python 3 as Python 2 is approaching EOL. You can continue using
+  Python 2 by passing `--use-py2` to `create-minion`.
+- Some timeouts have been increased to minimize the amount of timeouts when nothing has failed.
 
 ## Fixed
 - Couldn't list sizes with vultr provider.
