@@ -11,6 +11,8 @@ UNRELEASED -
 ## Changed
 - The license has been changed from MIT to the Hippocratic License to deny use that infringes on the
   UN's declaration of human rights.
+- The entire contents of the cloud-init/startup log is now printed when a node is created, instead
+  of just the last 10 lines from when we connect.
 
 
 0.9.0 - 2019-12-30

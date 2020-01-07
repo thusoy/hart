@@ -46,7 +46,8 @@ class BaseProvider(abc.ABC):
 
     def wait_for_init_script(self, client, extra=None):
         # Creds to https://stackoverflow.com/a/14158100 for a way to get the pid
-        _, stdout, stderr = client.exec_command('echo $$ && exec tail -f /var/log/cloud-init-output.log')
+        _, stdout, stderr = client.exec_command(
+            'echo $$ && exec tail -f -n +1 /var/log/cloud-init-output.log')
         tail_pid = int(stdout.readline())
         for line in stdout:
             print(line, end='')
