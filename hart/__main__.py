@@ -13,7 +13,7 @@ from .minions import (
 from .providers import provider_map
 
 class TerminalColors:
-    WARNING = '\033[93m'
+    WARNING = '\033[33m'
     FAIL = '\033[91m'
     RESET = '\033[0m'
 
@@ -24,11 +24,22 @@ def main(argv=None):
         args = cli.get_args(argv)
         args.action(args)
     except UserError as e:
-        if sys.stderr.isatty():
-            sys.stderr.write('%s%s%s\n' % (TerminalColors.FAIL, e, TerminalColors.RESET))
-        else:
-            sys.stderr.write('%s\n' % e)
+        log_error(e)
         sys.exit(1)
+
+
+def log_warning(message):
+    if sys.stderr.isatty():
+        sys.stderr.write('%s%s%s\n' % (TerminalColors.WARNING, message, TerminalColors.RESET))
+    else:
+        sys.stderr.write('%s\n' % message)
+
+
+def log_error(message):
+    if sys.stderr.isatty():
+        sys.stderr.write('%s%s%s\n' % (TerminalColors.FAIL, message, TerminalColors.RESET))
+    else:
+        sys.stderr.write('%s\n' % message)
 
 
 class HartCLI:
@@ -54,8 +65,22 @@ class HartCLI:
         # Do an initial parse of just the provider arguments, to be able to add
         # provider-specific arguments to the full parse
         provider_args, _ = parser.parse_known_args(argv)
-        provider = get_provider(provider_args.provider, provider_args.config,
-            provider_args.region)
+
+        try:
+            provider = get_provider(provider_args.provider, provider_args.config,
+                provider_args.region)
+        except (FileNotFoundError, KeyError):
+            # Enable running help without having a valid provider config
+            # FileNotFoundError if config is missing entirely, KeyError if the
+            # defualt or given provider is missing
+            # TODO: This ignores any action that might be given, the defualt
+            # parameters for those should be included
+            if provider_args.help:
+                log_warning('Unable to instantiate provider, add a valid provider config to see '
+                    'all available parameters')
+                parser.print_help()
+                sys.exit(0)
+            raise
 
         subparsers = parser.add_subparsers(dest='command',
             title='Commands',
