@@ -18,6 +18,11 @@ accounts with the different providers (put credentials in `hart.toml`):
 
     $ ./test -m integration
 
+If you're working on a single provider and don't want to test all of them, use
+standard pytest filtering:
+
+    $ ./test -m integration -k digitalocean
+
 
 ## Manual testing
 
