@@ -14,6 +14,9 @@ UNRELEASED -
 - The entire contents of the cloud-init/startup log is now printed when a node is created, instead
   of just the last 10 lines from when we connect.
 
+## Added
+- `-R` as a shorthand for `--region`.
+
 
 0.9.0 - 2019-12-30
 ------------------

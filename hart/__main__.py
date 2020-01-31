@@ -30,7 +30,7 @@ class HartCLI:
 
         parser.add_argument('-P', '--provider', choices=provider_map.keys(), default='do',
             help='Which VPS provider to use. Default: %(default)s')
-        parser.add_argument('--region',
+        parser.add_argument('-R', '--region',
             help='Which region to create the node in. Default: %(default)s')
         parser.add_argument('-c', '--config', default='/etc/hart.toml',
             help='Path to config file with credentails. Default: %(default)s')
