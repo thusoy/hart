@@ -317,8 +317,11 @@ class EC2Provider(BaseProvider):
 
 
     def get_sizes(self, **kwargs):
-        if self.region is None:
-            raise ValueError('Must specify region to list available ec2 image sizes')
+        region = self.region
+        if region is None:
+            sys.stderr.write('No region specified, using us-east-1. Sizes listed might not exist '
+                'in any other region\n')
+            region = 'us-east-1'
 
         pricing = boto3.client('pricing',
             region_name='us-east-1',
@@ -326,7 +329,7 @@ class EC2Provider(BaseProvider):
             aws_secret_access_key=self.aws_secret_access_key,
         )
         sizes = []
-        location = region_to_location_map[self.region]
+        location = region_to_location_map[region]
         filters = [
             {'Field': 'currentGeneration', 'Value': 'Yes', 'Type': 'TERM_MATCH'},
             {'Field': 'operatingSystem', 'Value': 'Linux', 'Type': 'TERM_MATCH'},
