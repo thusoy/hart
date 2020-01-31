@@ -17,3 +17,9 @@ def test_list_zones(local_config, capsys):
     captured = capsys.readouterr()
     assert 'Hamina, Finland (europe-north1-a)' in captured.out
     assert captured.err == ''
+
+
+def test_list_sizes(local_config, capsys):
+    main(['-P', 'gce', '-c', local_config, 'list-sizes'])
+    captured = capsys.readouterr()
+    assert captured.out.count('2 vCPUs, 4 GB RAM, No disk (e2-medium, $40/month)') == 1

@@ -39,9 +39,10 @@ region_pretty_names = {
 
 class GCEProvider(BaseLibcloudProvider):
 
-    def __init__(self, user_id, key, project, **kwargs):
+    def __init__(self, user_id, key, project, region=None, **kwargs):
         constructor = get_driver(Provider.GCE)
         self.driver = constructor(user_id=user_id, key=key, project=project, auth_type='SA')
+        self.region = region
 
 
     def get_sizes(self, **kwargs):
@@ -49,12 +50,12 @@ class GCEProvider(BaseLibcloudProvider):
         # TODO: Integrate with pricing API, these will be estimates based on 2020-01-31 Iowa pricing
         cpu_cost = 16.153221
         memory_cost = 2.165107
-        for size in self.driver.list_sizes():
+        for size in self.driver.list_sizes(self.region or 'us-east1-b'):
             sizes.append(NodeSize(
                 size.name,
                 size.ram/2**10,
                 size.extra['guestCpus'],
-                'No disk', # Extra volumes needs to be specified manually
+                'No disk', # Extra volumes beyond the tiny root disk needs to be specified manually
                 size.ram/2**10 * memory_cost + size.extra['guestCpus'] * cpu_cost,
                 {},
             ))
