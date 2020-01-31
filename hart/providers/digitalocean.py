@@ -63,7 +63,7 @@ class DOProvider(BaseLibcloudProvider):
 
 
 def pubkey_to_fingerprint(pubkey):
-    '''Encodes arbitrary binary data as colon-separated hex pairs, like ba:5e:ba:11.'''
+    '''Encodes the key fingerprint as colon-separated hex pairs, like ba:5e:ba:11.'''
     base64_bytes = pubkey.split(' ')[1]
     key_blob = base64.b64decode(base64_bytes)
     hex_encoded = hashlib.md5(key_blob).hexdigest()
