@@ -104,7 +104,4 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# Persian stuff
-migrations/
-artifacts/
-tools/bin/
+TODO.md
