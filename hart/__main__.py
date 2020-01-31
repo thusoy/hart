@@ -151,7 +151,6 @@ class HartCLI:
     def cli_list_sizes(self, args):
         kwargs = vars(args)
         provider = kwargs.pop('provider')
-        sizes = provider.get_sizes()
         for size in provider.get_sizes(**kwargs):
             formatted_memory = '%d' % size.memory if size.memory >= 1 else '%.1f' % size.memory
             print('%d vCPUs, %s GB RAM, %s (%s, $%d/month) %s' % (
