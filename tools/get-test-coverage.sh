@@ -1,9 +1,11 @@
 #!/bin/sh
 
 ./venv/bin/py.test \
+    -m 'not integration' \
     --cov hart \
     --cov-config .coveragerc \
     --cov-report html:coverage \
-    tests/
+    tests/ \
+    "$@"
 
 open coverage/index.html

@@ -11,9 +11,9 @@ from .minions import (
 )
 from .providers import provider_map
 
-def main():
+def main(argv=None):
     cli = HartCLI()
-    args = cli.get_args()
+    args = cli.get_args(argv)
     args.action(args)
 
 
@@ -25,7 +25,7 @@ class HartCLI:
                 'LC_CTYPE=en_US.UTF-8 and PYTHONIOENCODING=utf-8 to fix this.')
 
 
-    def get_args(self):
+    def get_args(self, argv):
         parser = argparse.ArgumentParser(prog='hart', add_help=False)
 
         parser.add_argument('-P', '--provider', choices=provider_map.keys(), default='do',
@@ -39,7 +39,7 @@ class HartCLI:
 
         # Do an initial parse of just the provider arguments, to be able to add
         # provider-specific arguments to the full parse
-        provider_args, _ = parser.parse_known_args()
+        provider_args, _ = parser.parse_known_args(argv)
         provider = get_provider(provider_args.provider, provider_args.config,
             provider_args.region)
 
@@ -57,7 +57,7 @@ class HartCLI:
         provider.add_list_regions_arguments(list_regions_parser)
         provider.add_list_sizes_arguments(list_sizes_parser)
 
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
         args.provider = provider
 
         if args.help:
@@ -182,4 +182,4 @@ def get_provider(provider_alias, config_path, region):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
