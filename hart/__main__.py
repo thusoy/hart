@@ -3,6 +3,7 @@ import sys
 
 from .config import build_provider_from_file
 from .constants import DEBIAN_VERSIONS
+from .exceptions import UserError
 from .minions import (
     create_minion,
     connect_minion,
@@ -11,16 +12,29 @@ from .minions import (
 )
 from .providers import provider_map
 
+class TerminalColors:
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    RESET = '\033[0m'
+
+
 def main(argv=None):
-    cli = HartCLI()
-    args = cli.get_args(argv)
-    args.action(args)
+    try:
+        cli = HartCLI()
+        args = cli.get_args(argv)
+        args.action(args)
+    except UserError as e:
+        if sys.stderr.isatty():
+            sys.stderr.write('%s%s%s\n' % (TerminalColors.FAIL, e, TerminalColors.RESET))
+        else:
+            sys.stderr.write('%s\n' % e)
+        sys.exit(1)
 
 
 class HartCLI:
     def __init__(self):
         if sys.getfilesystemencoding() == 'ascii':
-            raise ValueError('Your system has incorrect locale settings, '
+            raise UserError('Your system has incorrect locale settings, '
                 'leading to non-unicode default IO. Set f. ex '
                 'LC_CTYPE=en_US.UTF-8 and PYTHONIOENCODING=utf-8 to fix this.')
 

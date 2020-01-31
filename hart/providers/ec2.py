@@ -13,6 +13,7 @@ from libcloud.compute.types import Provider
 
 from .base import BaseProvider, NodeSize, Region
 from ..constants import DEBIAN_VERSIONS
+from ..exceptions import UserError
 
 
 # The pricing API is a supreme clusterfuck that requires lots of special care.
@@ -122,7 +123,7 @@ class EC2Provider(BaseProvider):
             **kwargs):
         zone = kwargs.get('zone')
         if not zone:
-            raise ValueError('You must specify the ec2 availability zone')
+            raise UserError('You must specify the ec2 availability zone')
 
         size = self.get_size(size)
         image = self.get_image(debian_codename)
@@ -134,11 +135,11 @@ class EC2Provider(BaseProvider):
         subnets = subnet_response['Subnets']
 
         if not subnets and subnet:
-            raise ValueError('No subnet matching %s in %s' % (subnet, zone))
+            raise UserError('No subnet matching %s in %s' % (subnet, zone))
         elif not subnets:
-            raise ValueError('No available subnets in %s' % zone)
+            raise UserError('No available subnets in %s' % zone)
         elif len(subnets) > 1:
-            raise ValueError('More than one subnet in availability zone, specify'
+            raise UserError('More than one subnet in availability zone, specify'
                 ' which one to use: %s' % (', '.join(s.id for s in subnets)))
 
         subnet = subnets[0]
@@ -168,7 +169,7 @@ class EC2Provider(BaseProvider):
         tag_specifications = [{'Key': 'Name', 'Value': minion_id}]
         for tag in tags:
             if not '=' in tag:
-                raise ValueError('EC2 requires tags to be key=val (was %r)' % tag)
+                raise UserError('EC2 requires tags to be key=val (was %r)' % tag)
             key, val = tag.split('=', 1)
             tag_specifications.append({
                 'Key': key,
@@ -251,7 +252,7 @@ class EC2Provider(BaseProvider):
             external_ips = list(get_host_public_ips())
 
         if not external_ips:
-            raise ValueError('Could not find any public IPs on the current '
+            raise UserError('Could not find any public IPs on the current '
                 'host and thus wont be able to connect to the new node')
 
         group = self.ec2.create_security_group(

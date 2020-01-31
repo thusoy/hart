@@ -10,6 +10,7 @@ from libcloud.utils.py3 import httplib
 
 from .base import NodeSize
 from .libcloud import BaseLibcloudProvider
+from ..exceptions import UserError
 
 
 class VultrProvider(BaseLibcloudProvider):
@@ -43,7 +44,7 @@ class VultrProvider(BaseLibcloudProvider):
         }
         tag = None
         if len(tags) > 1:
-            raise ValueError('Can only set a single tag on vultr')
+            raise UserError('Can only set a single tag on vultr')
         elif tags:
             tag = tags[0]
 
