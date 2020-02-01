@@ -102,36 +102,36 @@ class BaseProvider(abc.ABC):
 
     def create_remote_ssh_key(self, key_name, ssh_key, public_key):
         '''Return a tuple of (remote_key, auth_key)'''
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def destroy_remote_ssh_key(self, remote_key):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def get_size(self, size_name):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def get_location(self, location_id):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def destroy_node(self, node, extra=None, **kwargs):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def get_node(self, node):
         '''node can be either a id or a Node as returned from `create_node`.'''
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def get_regions(self, **kwargs):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def get_sizes(self, **kwargs):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
     def create_node(self,
@@ -142,6 +142,6 @@ class BaseProvider(abc.ABC):
             cloud_init,
             private_networking,
             tags,
-            size,
+            size=None,
             **kwargs):
-        raise NotImplemented()
+        raise NotImplementedError()
