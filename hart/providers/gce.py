@@ -1,8 +1,10 @@
 import contextlib
 import datetime
+import hashlib
 import json
-import time
+import re
 import subprocess
+import time
 
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider, NodeState
@@ -10,6 +12,8 @@ from libcloud.utils.py3 import httplib
 
 from .base import NodeSize, Region
 from .libcloud import BaseLibcloudProvider
+from ..constants import DEBIAN_VERSIONS
+from ..exceptions import UserError
 
 # Haven't found a way to get pretty location names from the API yet, thus hardcoding these where we know them
 region_pretty_names = {
@@ -79,3 +83,122 @@ class GCEProvider(BaseLibcloudProvider):
                 regions.append(Region(location.name, pretty_name))
         regions.sort(key=lambda r: r.id)
         return regions
+
+
+    def create_remote_ssh_key(self, key_name, ssh_key, public_key):
+        # Since we don't use global keys there's no item on GCE to represent the key
+        return (key_name, 'root:%s hart@saltmaster' % public_key)
+
+
+    def destroy_remote_ssh_key(self, remote_key):
+        # The saltmaster discards the key after creation so don't have to remove it from the
+        # metadata apart from cleaning up
+        pass
+
+
+    def add_create_minion_arguments(self, parser):
+        def split_csv_keyval(clistring):
+            ret = {}
+            for key_value_pair in clistring.split(','):
+                if not '=' in key_value_pair:
+                    raise UserError('GCE requires labels to be key=value pairs')
+
+                key, value = key_value_pair.split('=', 1)
+                ret[key] = value
+            return ret
+
+        parser.add_argument('-z', '--zone', help='GCE zone to launch in')
+        parser.add_argument('-l', '--labels', type=split_csv_keyval,
+            help='Comma-separated key=value pairs of labels to add to the node.')
+        parser.add_argument('--volume-size', type=int, default=10,
+            help='The size of the boot drive in GB, minimum 10')
+        parser.add_argument('--volume-type', default='pd-ssd',
+            help='Which volume type to use for the boot drive. Default: %(default)s',
+            choices=('pd-standard', 'pd-ssd'))
+        # To use the highest-performing disk on GCE (local ssd mounted over
+        # NVMe) we need to mount multiple disks as that can't be the boot disk.
+        # Decide on a CLI convention for specifying arbitrary additional disks.
+        # Ref. https://cloud.google.com/compute/docs/disks/#introduction
+
+
+    def create_node(self,
+            minion_id,
+            region,
+            debian_codename,
+            auth_key,
+            cloud_init,
+            private_networking,
+            tags,
+            size='n1-standard-1',
+            **kwargs):
+        zone = kwargs.get('zone')
+        if not zone:
+            raise UserError('You must specify the GCE zone to launch in')
+
+        zone = self.driver.ex_get_zone(zone)
+        image = self.driver.ex_get_image('debian-%d' % DEBIAN_VERSIONS[debian_codename])
+        volume_type = kwargs.get('volume_type')
+        disk_type = self.driver.ex_get_disktype(volume_type, zone=zone)
+        node = self.driver.create_node(
+            name=name_from_minion_id(minion_id),
+            size=size,
+            location=zone,
+            image=None, # Specified in the disk params
+            description=minion_id,
+            ex_tags=tags,
+            ex_metadata={
+                'sshKeys': auth_key,
+                'startup-script': cloud_init,
+            },
+            ex_labels=kwargs.get('labels'),
+            ex_disks_gce_struct = [{
+                'autoDelete': True,
+                'boot': True,
+                'type': 'PERSISTENT', # The boot drive has to be persistent
+                'mode': 'READ_WRITE',
+                'initializeParams': {
+                    'diskSizeGb': kwargs.get('volume_size'),
+                    'diskType': disk_type.extra['selfLink'],
+                    'sourceImage': image.extra['selfLink']
+                }
+            }]
+        )
+        return node, None
+
+
+    def wait_for_init_script(self, client, extra=None):
+        # Creds to https://stackoverflow.com/a/14158100 for a way to get the pid
+        _, stdout, _ = client.exec_command(
+            'echo $$ && exec tail -f -n +1 /var/log/syslog')
+        tail_pid = int(stdout.readline())
+        startup_script_end = re.compile(r'startup-script: Return code (\d+)\.\n$', re.MULTILINE)
+        for line in stdout:
+            print(line, end='')
+            end_match = startup_script_end.search(line)
+            if end_match:
+                stdout.channel.close()
+                client.exec_command('kill %d' % tail_pid)
+                return_code = int(end_match.group(1))
+                if return_code == 0:
+                    break
+
+                raise ValueError('Startup script failed with return code %s' % return_code)
+
+
+    def destroy_node(self, node, extra=None, **kwargs):
+        name = name_from_minion_id(node.name)
+        self.driver.destroy_node(name, ex_sync=False)
+
+
+def name_from_minion_id(minion_id):
+    '''
+    Transform a minion id into a valid GCE VM name.
+
+    GCE VM names has to be a valid DNS label, which doesn't allow dots. Thus we
+    transform minion ids into a compatible name which is preferably also
+    somewhat legible from the cloud console. The full minion id is stored in the
+    description. This also needs to be deterministic.
+    '''
+    sanitized_name = minion_id.replace('.', '-')
+    hashed_id = hashlib.sha256(minion_id).hexdigest()
+    return '%s-%s' % (sanitized_name[:52], hashed_id[:10])
