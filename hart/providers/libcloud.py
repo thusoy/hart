@@ -56,4 +56,3 @@ class BaseLibcloudProvider(BaseProvider):
             regions.append(Region(location.id, location.name))
         regions.sort(key=lambda r: r.name)
         return regions
-

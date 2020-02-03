@@ -145,7 +145,7 @@ class GCEProvider(BaseLibcloudProvider):
                 'startup-script': cloud_init,
             },
             ex_labels=kwargs.get('labels'),
-            ex_disks_gce_struct = [{
+            ex_disks_gce_struct=[{
                 'autoDelete': True,
                 'boot': True,
                 'type': 'PERSISTENT', # The boot drive has to be persistent
@@ -155,7 +155,7 @@ class GCEProvider(BaseLibcloudProvider):
                     'diskType': disk_type.extra['selfLink'],
                     'sourceImage': image.extra['selfLink']
                 }
-            }]
+            }],
         )
         return node, None
 
