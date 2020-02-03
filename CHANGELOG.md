@@ -5,8 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
-0.10.0 - 2020-02-03
+UNRELEASED -
 ------------------
+
+## Fixed
+- Fix GCE minion id hash crash.
+
+
+0.10.0 - 2020-02-03
+-------------------
 
 ## Changed
 - The license has been changed from MIT to the Hippocratic License to deny use that infringes on the

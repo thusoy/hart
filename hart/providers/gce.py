@@ -194,5 +194,5 @@ def name_from_minion_id(minion_id):
     description. This also needs to be deterministic.
     '''
     sanitized_name = minion_id.replace('.', '-')
-    hashed_id = hashlib.sha256(minion_id).hexdigest()
+    hashed_id = hashlib.sha256(minion_id.encode('utf-8')).hexdigest()
     return '%s-%s' % (sanitized_name[:52], hashed_id[:10])
