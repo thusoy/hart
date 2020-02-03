@@ -3,34 +3,57 @@ import sys
 
 from .config import build_provider_from_file
 from .constants import DEBIAN_VERSIONS
+from .exceptions import UserError
 from .minions import (
     create_minion,
-    connect_minion,
     destroy_minion,
-    destroy_node,
 )
 from .providers import provider_map
 
-def main():
-    cli = HartCLI()
-    args = cli.get_args()
-    args.action(args)
+class TerminalColors:
+    WARNING = '\033[33m'
+    FAIL = '\033[91m'
+    RESET = '\033[0m'
+
+
+def main(argv=None):
+    try:
+        cli = HartCLI()
+        args = cli.get_args(argv)
+        args.action(args)
+    except UserError as e:
+        log_error(e)
+        sys.exit(1)
+
+
+def log_warning(message):
+    if sys.stderr.isatty():
+        sys.stderr.write('%s%s%s\n' % (TerminalColors.WARNING, message, TerminalColors.RESET))
+    else:
+        sys.stderr.write('%s\n' % message)
+
+
+def log_error(message):
+    if sys.stderr.isatty():
+        sys.stderr.write('%s%s%s\n' % (TerminalColors.FAIL, message, TerminalColors.RESET))
+    else:
+        sys.stderr.write('%s\n' % message)
 
 
 class HartCLI:
     def __init__(self):
         if sys.getfilesystemencoding() == 'ascii':
-            raise ValueError('Your system has incorrect locale settings, '
+            raise UserError('Your system has incorrect locale settings, '
                 'leading to non-unicode default IO. Set f. ex '
                 'LC_CTYPE=en_US.UTF-8 and PYTHONIOENCODING=utf-8 to fix this.')
 
 
-    def get_args(self):
+    def get_args(self, argv):
         parser = argparse.ArgumentParser(prog='hart', add_help=False)
 
         parser.add_argument('-P', '--provider', choices=provider_map.keys(), default='do',
             help='Which VPS provider to use. Default: %(default)s')
-        parser.add_argument('--region',
+        parser.add_argument('-R', '--region',
             help='Which region to create the node in. Default: %(default)s')
         parser.add_argument('-c', '--config', default='/etc/hart.toml',
             help='Path to config file with credentails. Default: %(default)s')
@@ -39,9 +62,23 @@ class HartCLI:
 
         # Do an initial parse of just the provider arguments, to be able to add
         # provider-specific arguments to the full parse
-        provider_args, _ = parser.parse_known_args()
-        provider = get_provider(provider_args.provider, provider_args.config,
-            provider_args.region)
+        provider_args, _ = parser.parse_known_args(argv)
+
+        try:
+            provider = get_provider(provider_args.provider, provider_args.config,
+                provider_args.region)
+        except (FileNotFoundError, KeyError):
+            # Enable running help without having a valid provider config
+            # FileNotFoundError if config is missing entirely, KeyError if the
+            # defualt or given provider is missing
+            # TODO: This ignores any action that might be given, the defualt
+            # parameters for those should be included
+            if provider_args.help:
+                log_warning('Unable to instantiate provider, add a valid provider config to see '
+                    'all available parameters')
+                parser.print_help()
+                sys.exit(0)
+            raise
 
         subparsers = parser.add_subparsers(dest='command',
             title='Commands',
@@ -57,7 +94,7 @@ class HartCLI:
         provider.add_list_regions_arguments(list_regions_parser)
         provider.add_list_sizes_arguments(list_sizes_parser)
 
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
         args.provider = provider
 
         if args.help:
@@ -151,7 +188,6 @@ class HartCLI:
     def cli_list_sizes(self, args):
         kwargs = vars(args)
         provider = kwargs.pop('provider')
-        sizes = provider.get_sizes()
         for size in provider.get_sizes(**kwargs):
             formatted_memory = '%d' % size.memory if size.memory >= 1 else '%.1f' % size.memory
             print('%d vCPUs, %s GB RAM, %s (%s, $%d/month) %s' % (
@@ -182,4 +218,4 @@ def get_provider(provider_alias, config_path, region):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)

@@ -13,8 +13,9 @@ from collections import namedtuple
 import yaml
 from jinja2 import Template
 
-from .ssh import get_verified_ssh_client, ssh_run_command
 from .constants import DEBIAN_VERSIONS
+from .exceptions import UserError
+from .ssh import get_verified_ssh_client, ssh_run_command
 
 HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary node_extra')
 
@@ -135,9 +136,9 @@ def create_node(
 def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
     debian_version = DEBIAN_VERSIONS[debian_codename]
     if use_py2 and debian_version > 9:
-        raise ValueError('saltstack py2 is only available for debian stretch and older')
+        raise UserError('saltstack py2 is only available for debian stretch and older')
     if not use_py2 and debian_version < 9:
-        raise ValueError('saltstack py3 is only available for debian stretch and newer')
+        raise UserError('saltstack py3 is only available for debian stretch and newer')
     return 'https://repo.saltstack.com/%s/debian/%s/amd64/%s %s main' % (
         'apt' if use_py2 else 'py3', debian_version, salt_branch, debian_codename)
 

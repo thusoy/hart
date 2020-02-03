@@ -13,6 +13,10 @@ UNRELEASED -
   UN's declaration of human rights.
 - The entire contents of the cloud-init/startup log is now printed when a node is created, instead
   of just the last 10 lines from when we connect.
+- EC2 `list-sizes` without a region will now log a warning instead of erroring.
+
+## Added
+- `-R` as a shorthand for `--region`.
 
 
 0.9.0 - 2019-12-30

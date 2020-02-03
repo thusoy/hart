@@ -1,4 +1,3 @@
-import contextlib
 import datetime
 import json
 import time
@@ -10,6 +9,7 @@ from libcloud.utils.py3 import httplib
 
 from .base import NodeSize
 from .libcloud import BaseLibcloudProvider
+from ..exceptions import UserError
 
 
 class VultrProvider(BaseLibcloudProvider):
@@ -43,7 +43,7 @@ class VultrProvider(BaseLibcloudProvider):
         }
         tag = None
         if len(tags) > 1:
-            raise ValueError('Can only set a single tag on vultr')
+            raise UserError('Can only set a single tag on vultr')
         elif tags:
             tag = tags[0]
 
@@ -216,7 +216,7 @@ def add_ip(minion_id, current_device_ip, ip, netmask, ip_kind):
     :param ip: The new ip to attach
     :param ip_kind: The kind of IP to add. 'reserved' or 'private'.
     '''
-    device_name, next_label = get_network_device_name_for_ip(minion_id, current_device_ip)
+    _, next_label = get_network_device_name_for_ip(minion_id, current_device_ip)
     enable_network_interfaces_d(minion_id)
     add_ip_to_device(minion_id, ip_kind, next_label, ip, netmask)
     bring_up_interface_with_label(minion_id, next_label)

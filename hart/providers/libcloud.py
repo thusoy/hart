@@ -1,6 +1,7 @@
 from libcloud.compute.base import NodeAuthSSHKey
 
 from .base import BaseProvider, Region
+from ..exceptions import UserError
 
 
 class BaseLibcloudProvider(BaseProvider):
@@ -23,7 +24,7 @@ class BaseLibcloudProvider(BaseProvider):
             if size_name in (size.id, size.name):
                 return size
 
-        raise ValueError('Unknown size: %s' % size_name)
+        raise UserError('Unknown size: %s' % size_name)
 
 
     def get_location(self, location_id):
@@ -31,7 +32,7 @@ class BaseLibcloudProvider(BaseProvider):
             if location_id in (location.name, location.id):
                 return location
 
-        raise ValueError('Location %s not found' % location_id)
+        raise UserError('Location %s not found' % location_id)
 
 
     def destroy_node(self, node, extra=None, **kwargs):
@@ -45,7 +46,7 @@ class BaseLibcloudProvider(BaseProvider):
             if node_id in (node.id, node.name):
                 return node
 
-        raise ValueError('No node with id %s found in provider %s' % (
+        raise UserError('No node with id %s found in provider %s' % (
             node_id, self.__class__.__name__))
 
 
@@ -55,4 +56,3 @@ class BaseLibcloudProvider(BaseProvider):
             regions.append(Region(location.id, location.name))
         regions.sort(key=lambda r: r.name)
         return regions
-
