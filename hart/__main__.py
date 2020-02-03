@@ -6,9 +6,7 @@ from .constants import DEBIAN_VERSIONS
 from .exceptions import UserError
 from .minions import (
     create_minion,
-    connect_minion,
     destroy_minion,
-    destroy_node,
 )
 from .providers import provider_map
 

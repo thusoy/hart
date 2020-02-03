@@ -8,8 +8,6 @@ import boto3
 import ifaddr
 import paramiko
 from libcloud.compute.base import Node
-from libcloud.compute.providers import get_driver
-from libcloud.compute.types import Provider
 
 from .base import BaseProvider, NodeSize, Region
 from ..constants import DEBIAN_VERSIONS

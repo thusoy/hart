@@ -1,14 +1,8 @@
-import contextlib
-import datetime
 import hashlib
-import json
 import re
-import subprocess
-import time
 
 from libcloud.compute.providers import get_driver
-from libcloud.compute.types import Provider, NodeState
-from libcloud.utils.py3 import httplib
+from libcloud.compute.types import Provider
 
 from .base import NodeSize, Region
 from .libcloud import BaseLibcloudProvider
