@@ -6,7 +6,7 @@ import re
 from setuptools import setup, find_packages
 
 install_requires = [
-    'apache-libcloud',
+    'apache-libcloud>=2.6.1',
     'jinja2',
     'paramiko',
     'pyyaml',
