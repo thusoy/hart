@@ -5,8 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- GCE crash when trying to delete a node.
+
+
 0.10.1 - 2020-02-03
-------------------
+-------------------
 
 ## Fixed
 - Fix GCE minion id hash crash.
@@ -24,6 +31,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Added
 - `-R` as a shorthand for `--region`.
+- GCE provider.
 
 
 0.9.0 - 2019-12-30

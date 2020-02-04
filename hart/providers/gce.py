@@ -180,8 +180,15 @@ class GCEProvider(BaseLibcloudProvider):
 
 
     def destroy_node(self, node, extra=None, **kwargs):
-        name = name_from_minion_id(node.name)
-        self.driver.destroy_node(name, ex_sync=False)
+        self.driver.destroy_node(node, ex_sync=False)
+
+
+    def get_node(self, node):
+        if isinstance(node, str):
+            node = self.driver.ex_get_node(name_from_minion_id(node))
+        else:
+            node = self.driver.ex_get_node(node.name)
+        return node
 
 
 def name_from_minion_id(minion_id):
