@@ -195,11 +195,11 @@ def name_from_minion_id(minion_id):
     '''
     Transform a minion id into a valid GCE VM name.
 
-    GCE VM names has to be a valid DNS label, which doesn't allow dots. Thus we
-    transform minion ids into a compatible name which is preferably also
-    somewhat legible from the cloud console. The full minion id is stored in the
-    description. This also needs to be deterministic.
+    GCE VM names has to be a valid DNS label, which doesn't allow dots, or
+    leading numbers. Thus we transform minion ids into a compatible name which
+    is preferably also somewhat legible from the cloud console. The full minion
+    id is stored in the description. This also needs to be deterministic.
     '''
     sanitized_name = minion_id.replace('.', '-')
     hashed_id = hashlib.sha256(minion_id.encode('utf-8')).hexdigest()
-    return '%s-%s' % (sanitized_name[:52], hashed_id[:10])
+    return 'hart-%s-%s' % (sanitized_name[:47], hashed_id[:10])

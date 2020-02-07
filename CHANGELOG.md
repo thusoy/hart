@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Changed
+- GCE VM names are now prefixed with `hart-`. If you created any GCE VMs on 0.10.x you'll have to
+  manually add this prefix in the console to be able to destroy the minions. This was done to not
+  crash if trying to create a minion with a leading digit in the id.
+
+
 0.10.2 - 2020-02-04
 -------------------
 
