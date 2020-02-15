@@ -13,8 +13,7 @@ cat > /etc/salt/minion <<EOF
 # Temporary salt minion config from hart #
 ##########################################
 
-id: saltmaster
-file_client: local
+{{ minion_config }}
 EOF
 
 # Install the core packages needed
