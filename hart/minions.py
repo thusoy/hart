@@ -83,7 +83,7 @@ def create_node(
         use_py2=False,
         **kwargs
         ):
-    ssh_canary = base64.b64encode(os.urandom(30)).decode('utf-8')
+    ssh_canary = create_token()
     cloud_init_template = get_cloud_init_template()
     master_pubkey = get_master_pubkey()
     default_minion_config = {
@@ -94,6 +94,7 @@ def create_node(
 
     saltstack_repo = get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
     cloud_init = cloud_init_template.render(**{
+        'random_seed': create_token(),
         'minion_config': yaml.dump(default_minion_config),
         'ssh_canary': ssh_canary,
         'master_pubkey': master_pubkey,
@@ -131,6 +132,10 @@ def create_node(
                 sys.stderr.write('Destroying node since it failed initialization\n')
                 provider.destroy_node(node, extra)
             raise
+
+
+def create_token():
+    return base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode('utf-8')
 
 
 def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
