@@ -13,6 +13,10 @@ UNRELEASED -
   manually add this prefix in the console to be able to destroy the minions. This was done to not
   crash if trying to create a minion with a leading digit in the id.
 
+## Fixed
+- The minion's random pool is now seeded from the saltmaster early in the startup process to make
+  early key generation stronger.
+
 
 0.10.2 - 2020-02-04
 -------------------
