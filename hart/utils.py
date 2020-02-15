@@ -3,7 +3,7 @@ import datetime
 import os
 from collections import namedtuple
 
-from jinja2 import Template
+import jinja2
 
 from .constants import DEBIAN_VERSIONS
 from .exceptions import UserError
@@ -17,10 +17,9 @@ def create_token():
 
 
 def get_cloud_init_template(template_name='minion.sh'):
-    template_path = os.path.join(os.path.dirname(__file__), 'cloud-init', template_name)
-    with open(template_path) as fh:
-        cloud_init_template = Template(fh.read())
-    return cloud_init_template
+    template_directory = os.path.join(os.path.dirname(__file__), 'cloud-init')
+    environment = jinja2.Environment(loader=jinja2.FileSystemLoader(template_directory))
+    return environment.get_template(template_name)
 
 
 def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
