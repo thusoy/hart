@@ -28,6 +28,10 @@ echo '{{ ssh_canary }}' > /tmp/ssh-canary
 # firewall when it is activated later
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
 
+# Stop apt from fetching translation files to speed up apt operations
+printf '// Added by hart cloud-init\nAcquire::Languages "none";\n' \
+    > /etc/apt/apt.conf.d/99hart-translations
+
 # Make sure apt doesn't prompt for anything
 apt_get_noninteractive () {
     export DEBIAN_FRONTEND=noninteractive
