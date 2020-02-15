@@ -1,6 +1,7 @@
 import base64
 import contextlib
 import hashlib
+import os
 import time
 import sys
 
@@ -43,6 +44,15 @@ def get_verified_ssh_client(ip, ssh_key, canary, username='root'):
     client = connect_to_droplet(ip, ssh_key, username)
     print('Connected')
 
+    # We might not be connected to the right box yet, but we should help seed
+    # the random pool as early as possible in the boot sequence. There's nothing
+    # sensitive here as we'll disconnect if the canary fails in the next step
+    # and the minion will be destroyed. Doing this in addition to seeding over
+    # cloud-init since the contents of cloud-init is rarely safe from someone
+    # that manages to compromise the server.
+    print('Seeding random pool')
+    seed_client_random_pool(client)
+
     # Verify the ssh canary as the first thing to not run any potentially
     # dangerous operations on an untrusted box
     wait_for_verified_ssh_canary(client, canary, should_sudo=username != 'root')
@@ -75,6 +85,13 @@ def connect_to_droplet(ip, client_ssh_key, username):
         raise ValueError('Failed to connect to new node')
 
     return client
+
+
+def seed_client_random_pool(client):
+    seed = os.urandom(32)
+    stdin, _, _ = client.exec_command('dd of=/dev/random', timeout=3)
+    stdin.write(seed)
+    stdin.channel.close()
 
 
 def wait_for_verified_ssh_canary(client, ssh_canary, should_sudo):
