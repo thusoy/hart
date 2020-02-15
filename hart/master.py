@@ -107,7 +107,6 @@ def connect_to_master(hart_node, script):
             hart_node.ssh_canary,
             username) as client:
         hart_node.provider.wait_for_init_script(client, hart_node.node_extra)
-        import pdb; pdb.set_trace()
         if script:
             sftp_client = client.open_sftp()
             script_path = '/tmp/hart-master-init'
