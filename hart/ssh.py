@@ -19,7 +19,6 @@ def ssh_run_command(client, command, timeout=3, sensitive=False):
     captured_stdout = []
     captured_stderr = []
     _, stdout, stderr = client.exec_command(command, timeout=timeout)
-    # while not stdout.channel.exit_status_ready():
     # This causes stderr to be depleted before doing anything else, for true interactive output
     # we need to use the channel API directly and use recv_stderr_ready/recv_
     for chunk in stderr:
