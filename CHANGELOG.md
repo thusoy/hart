@@ -12,6 +12,8 @@ UNRELEASED -
 - GCE VM names are now prefixed with `hart-`. If you created any GCE VMs on 0.10.x you'll have to
   manually add this prefix in the console to be able to destroy the minions. This was done to not
   crash if trying to create a minion with a leading digit in the id.
+- Only security updates are now applied when the minion is created, whereas earlier we upgraded all
+  packages. If you want to upgrade all packages you should do so from salt instead.
 
 ## Fixed
 - The minion's random pool is now seeded from the saltmaster early in the startup process to make

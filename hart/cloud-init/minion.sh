@@ -93,9 +93,20 @@ EOF
 # Add the salt debian repo
 echo 'deb {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
 
-# Update the packages and upgrade whatever we have locally
+apply_security_updates () {
+    local security_list=/tmp/apt-security.list
+    grep -ir --no-filename security /etc/apt/sources.list /etc/apt/sources.list.d \
+        > "$security_list"
+    apt_get_noninteractive upgrade \
+        -o Dir::Etc::SourceList="$security_list" \
+        -o Dir::Etc::SourceParts="-"
+    rm "$security_list"
+}
+
+# Update the repo and apply all security updates. If people want to upgrade
+# other packages they can do so from salt.
 apt-get update
-apt_get_noninteractive upgrade
+apply_security_updates
 
 # Add a trust root for the salt master to prevent MitM on bootstrap
 mkdir -p /etc/salt/pki/minion
