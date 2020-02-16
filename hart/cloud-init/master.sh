@@ -18,3 +18,10 @@ EOF
 
 # Install the core packages needed
 apt_get_noninteractive install salt-master salt-minion
+
+# Install hart
+apt_get_noninteractive install python3 python3-venv
+python3 -m venv /opt/hart-venv
+/opt/hart-venv/bin/pip install -U pip setuptools wheel
+/opt/hart-venv/bin/pip install hart
+ln -s /opt/hart-venv/bin/hart /usr/bin/hart
