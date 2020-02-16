@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Added
+- `-v|--version` to print the version on the CLI.
+
 
 0.11.0 - 2020-02-16
 -------------------

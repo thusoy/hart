@@ -10,6 +10,7 @@ from .minions import (
     destroy_minion,
 )
 from .providers import provider_map
+from .version import __version__
 
 class TerminalColors:
     WARNING = '\033[33m'
@@ -60,6 +61,7 @@ class HartCLI:
             help='Path to config file with credentails. Default: %(default)s')
         # Explicitly add help to be able to parse the provider before printing the help
         parser.add_argument('-h', '--help', action='store_true', help='Print help')
+        parser.add_argument('-v', '--version', action='version', version='hart v%s' % __version__)
 
         # Do an initial parse of just the provider arguments, to be able to add
         # provider-specific arguments to the full parse
