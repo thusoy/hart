@@ -10,6 +10,7 @@ UNRELEASED -
 
 ## Added
 - You can now specify the target salt branch from the CLI.
+- You can now add extra minion config on the CLI.
 
 ## Changed
 - GCE VM names are now prefixed with `hart-`. If you created any GCE VMs on 0.10.x you'll have to

@@ -36,7 +36,7 @@ to a host that has a routeable IP for the new minions to be able to connect to
 the container (also make sure ports 4505 and 4506 is allowed through the
 firewall to that server: `sudo iptables -I INPUT -p tcp -m multiport --dports
 4505,4506 -j ACCEPT`). Set the public IP as the master for the minions by
-setting `minion_config: {'master': '$IP'}` in the call to `create_minion`.
+including `--minion-config '{"master": "$IP"}'` when calling `create-minion`.
 Create a file `hart.toml` in the root of the repo with credentials to use for
 development.
 

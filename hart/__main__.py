@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 
 from .config import build_provider_from_file
@@ -112,6 +113,9 @@ class HartCLI:
         def split_csv(clistring):
             return clistring.split(',')
 
+        def json_parser(value):
+            return json.loads(value)
+
         parser = subparsers.add_parser('create-minion', help='Create a new minion')
         parser.add_argument('minion_id')
         parser.add_argument('-s', '--size',
@@ -127,6 +131,7 @@ class HartCLI:
             help='Use py2 instead of py3 for saltstack.')
         parser.add_argument('--salt-branch', default='latest',
             help='The salt branch to use. Default: %(default)s')
+        parser.add_argument('--minion-config', help='Minion config in JSON', type=json_parser)
 
         parser.set_defaults(action=self.cli_create_minion)
         return parser
@@ -166,6 +171,7 @@ class HartCLI:
         debian_codename = kwargs.pop('debian_codename')
         use_py2 = kwargs.pop('use_py2')
         salt_branch = kwargs.pop('salt_branch')
+        minion_config = kwargs.pop('minion_config')
         try:
             create_minion(
                 minion_id,
@@ -176,6 +182,7 @@ class HartCLI:
                 private_networking=private_networking,
                 debian_codename=debian_codename,
                 use_py2=use_py2,
+                minion_config=minion_config,
                 **kwargs
             )
         except KeyboardInterrupt:
