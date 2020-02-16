@@ -125,6 +125,8 @@ class HartCLI:
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')
+        parser.add_argument('--salt-branch', default='latest',
+            help='The salt branch to use. Default: %(default)s')
 
         parser.set_defaults(action=self.cli_create_minion)
         return parser
@@ -163,12 +165,14 @@ class HartCLI:
         private_networking = kwargs.pop('private_networking')
         debian_codename = kwargs.pop('debian_codename')
         use_py2 = kwargs.pop('use_py2')
+        salt_branch = kwargs.pop('salt_branch')
         try:
             create_minion(
                 minion_id,
                 provider,
                 region,
                 size,
+                salt_branch=salt_branch,
                 private_networking=private_networking,
                 debian_codename=debian_codename,
                 use_py2=use_py2,

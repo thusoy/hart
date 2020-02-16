@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELEASED -
 -------------------
 
+## Added
+- You can now specify the target salt branch from the CLI.
+
 ## Changed
 - GCE VM names are now prefixed with `hart-`. If you created any GCE VMs on 0.10.x you'll have to
   manually add this prefix in the console to be able to destroy the minions. This was done to not
