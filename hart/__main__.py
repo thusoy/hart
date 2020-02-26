@@ -95,6 +95,8 @@ class HartCLI:
         list_sizes_parser = self.add_list_sizes_parser(subparsers)
 
         provider.add_create_minion_arguments(create_minion_parser)
+        # We assume creating a master takes the same arguments as create minion
+        provider.add_create_minion_arguments(create_master_parser)
         provider.add_destroy_minion_arguments(destroy_minion_parser)
         provider.add_list_regions_arguments(list_regions_parser)
         provider.add_list_sizes_arguments(list_sizes_parser)
