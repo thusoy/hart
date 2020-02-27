@@ -29,18 +29,25 @@ def main(argv=None):
         sys.exit(1)
 
 
-def log_warning(message):
-    if sys.stderr.isatty():
-        sys.stderr.write('%s%s%s\n' % (TerminalColors.WARNING, message, TerminalColors.RESET))
-    else:
-        sys.stderr.write('%s\n' % message)
+def log_warning(message, end='\n'):
+    log_to_stderr_with_color(message, TerminalColors.WARNING, end)
 
 
-def log_error(message):
-    if sys.stderr.isatty():
-        sys.stderr.write('%s%s%s\n' % (TerminalColors.FAIL, message, TerminalColors.RESET))
+def log_error(message, end='\n'):
+    log_to_stderr_with_color(message, TerminalColors.FAIL, end)
+
+
+def log_to_stderr_with_color(message, color, end):
+    out = sys.stderr
+    if out.isatty():
+        out.write(color)
+        out.write(message)
+        out.write(TerminalColors.RESET)
     else:
-        sys.stderr.write('%s\n' % message)
+        out.write(message)
+    if end:
+        out.write(end)
+    out.flush()
 
 
 class HartCLI:
