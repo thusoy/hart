@@ -5,7 +5,6 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
-from .exceptions import UserError
 from .ssh import get_verified_ssh_client, ssh_run_command
 
 
