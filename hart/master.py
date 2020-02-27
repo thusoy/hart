@@ -122,4 +122,8 @@ def connect_to_master(hart_node, script, authorize_key=None):
             sftp_client.chmod(script_path, 0o700)
             sftp_client.close()
             ssh_run_command(client, script_path, timeout=None)
-        print('Master created: %s' % hart_node.public_ip)
+            master_pubkeys = ssh_run_command(client,
+                'for pubkey in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$pubkey"; done')
+
+        print('Master created: %s@%s\nssh fingerprints: \n%s' % (
+            username, hart_node.public_ip, master_pubkeys))
