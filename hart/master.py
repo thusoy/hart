@@ -21,6 +21,7 @@ def create_master(
         minion_config=None,
         use_py2=False,
         script=None,
+        authorize_key=None,
         **kwargs
         ):
     hart_node = create_master_node(
@@ -36,9 +37,9 @@ def create_master(
         **kwargs
     )
     try:
-        connect_to_master(hart_node, script)
+        connect_to_master(hart_node, script, authorize_key)
     except:
-        sys.stderr.write('Destroying master since it failed to connect\n')
+        sys.stderr.write('Destroying master since it failed startup\n')
         hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
         raise
 
@@ -99,7 +100,7 @@ def create_master_node(
             raise
 
 
-def connect_to_master(hart_node, script):
+def connect_to_master(hart_node, script, authorize_key=None):
     username = hart_node.provider.username
     with get_verified_ssh_client(
             hart_node.public_ip,
@@ -107,6 +108,8 @@ def connect_to_master(hart_node, script):
             hart_node.ssh_canary,
             username) as client:
         hart_node.provider.wait_for_init_script(client, hart_node.node_extra)
+        if authorize_key:
+            ssh_run_command(client, 'echo "%s" >> ~/.ssh/authorized_keys' % authorize_key)
         if script:
             sftp_client = client.open_sftp()
             script_path = '/tmp/hart-master-init'

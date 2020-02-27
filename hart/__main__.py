@@ -164,6 +164,8 @@ class HartCLI:
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')
+        parser.add_argument('-a', '--authorize-key',
+            help='An ssh public key to add to .ssh/authorized_keys.')
 
         parser.set_defaults(action=self.cli_create_master)
         return parser
@@ -204,6 +206,7 @@ class HartCLI:
         use_py2 = kwargs.pop('use_py2')
         salt_branch = kwargs.pop('salt_branch')
         minion_config = kwargs.pop('minion_config')
+        authorize_key = kwargs.pop('authorize_key')
         try:
             create_minion(
                 minion_id,
@@ -215,6 +218,7 @@ class HartCLI:
                 debian_codename=debian_codename,
                 use_py2=use_py2,
                 minion_config=minion_config,
+                authorize_key=authorize_key,
                 **kwargs
             )
         except KeyboardInterrupt:
