@@ -25,3 +25,7 @@ python3 -m venv /opt/hart-venv
 /opt/hart-venv/bin/pip install -U pip setuptools wheel
 /opt/hart-venv/bin/pip install hart
 ln -s /opt/hart-venv/bin/hart /usr/bin/hart
+
+# Disable the salt-minion service as it'll run masterless
+service salt-minion stop
+systemctl disable salt-minion.service
