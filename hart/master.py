@@ -112,7 +112,8 @@ def connect_to_master(hart_node, script, authorize_key=None):
             ssh_run_command(client, 'echo "%s" >> ~/.ssh/authorized_keys' % authorize_key)
         if script:
             sftp_client = client.open_sftp()
-            script_path = '/tmp/hart-master-init'
+            # Preserving this on disk as a record of how the master was created
+            script_path = '/root/hart-master-init'
             with sftp_client.file(script_path, 'wx') as remote_file:
                 with open(script, 'rb') as local_file:
                     chunk_size = 16*2**10
