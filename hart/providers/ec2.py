@@ -141,14 +141,16 @@ class EC2Provider(BaseProvider):
                 ' which one to use: %s' % (', '.join(s.id for s in subnets)))
 
         subnet = subnets[0]
-        temp_security_group = self.create_temp_security_group(minion_id, kwargs.get('connection_gateway'))
+        temp_security_group = self.create_temp_security_group(minion_id,
+            kwargs.get('connection_gateway'))
 
         block_devices = []
         volume_type = kwargs.get('volume_type')
         volume_size = kwargs.get('volume_size')
         if volume_type or volume_size:
             ebs = {}
-            # iops is only supported for io1 volumes and thus can only be specified with --volume-type
+            # iops is only supported for io1 volumes and thus can only be
+            # specified with --volume-type
             iops = kwargs.get('volume_iops')
             if iops:
                 ebs['Iops'] = iops
@@ -216,8 +218,8 @@ class EC2Provider(BaseProvider):
                 try:
                     instance_response = self.ec2.describe_instances(InstanceIds=[node.id])
                     break
-                except Exception as e:
-                    exception = e
+                except Exception as error:
+                    exception = error
                     time.sleep(1)
             else:
                 # no break

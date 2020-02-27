@@ -124,7 +124,9 @@ class VultrProvider(BaseLibcloudProvider):
 
     def get_image(self, debian_codename):
         for image in self.driver.list_images():
-            if image.extra['family'] == 'debian' and image.extra['arch'] == 'x64' and debian_codename in image.name:
+            if (image.extra['family'] == 'debian'
+                    and image.extra['arch'] == 'x64'
+                    and debian_codename in image.name):
                 return image
 
         raise ValueError('Debian %s image not found' % debian_codename)

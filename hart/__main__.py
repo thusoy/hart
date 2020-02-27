@@ -24,8 +24,8 @@ def main(argv=None):
         cli = HartCLI()
         args = cli.get_args(argv)
         args.action(args)
-    except UserError as e:
-        log_error(e)
+    except UserError as error:
+        log_error(error)
         sys.exit(1)
 
 

@@ -9,7 +9,8 @@ from .libcloud import BaseLibcloudProvider
 from ..constants import DEBIAN_VERSIONS
 from ..exceptions import UserError
 
-# Haven't found a way to get pretty location names from the API yet, thus hardcoding these where we know them
+# Haven't found a way to get pretty location names from the API yet, thus
+# hardcoding these where we know them
 region_pretty_names = {
     'asia-east1': 'Changhua County, Taiwan',
     'asia-east2': 'Hong Kong',

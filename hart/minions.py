@@ -163,8 +163,8 @@ def check_existing_minion(minion_id):
 
     existing_categories = minions.keys()
     if existing_categories:
-        should_continue = input('Existing minions matching %s were found in %s, overwrite? [y/N]' % (
-            minion_id, ', '.join(existing_categories)))
+        should_continue = input('Existing minions matching %s were found in %s, '
+            'overwrite? [y/N]' % (minion_id, ', '.join(existing_categories)))
         return should_continue == 'y'
 
     return True
@@ -212,7 +212,8 @@ def verify_minion_connection(client, minion_id, username):
 
 
 def get_minion_pubkey(client, should_sudo):
-    _, stdout, stderr = client.exec_command('%scat /etc/salt/pki/minion/minion.pub' % ('sudo ' if should_sudo else '',), timeout=3)
+    _, stdout, stderr = client.exec_command('%scat /etc/salt/pki/minion/minion.pub' % (
+        'sudo ' if should_sudo else '',), timeout=3)
     if stdout.channel.recv_exit_status() != 0:
         raise ValueError('Failed to get minion pubkey: %s' % ''.join(stderr))
 
