@@ -9,6 +9,7 @@ UNRELEASED -
 
 ## Added
 - `-v|--version` to print the version on the CLI.
+- Ability to bootstrap a saltmaster with the command `create-master`.
 
 
 0.11.0 - 2020-02-16
