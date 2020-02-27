@@ -24,7 +24,8 @@ load-plugins=
 #            errors will be caught by tests
 disable=missing-docstring,
     bad-continuation,
-    I
+    I,
+    R
 
 [REPORTS]
 
