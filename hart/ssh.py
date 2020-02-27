@@ -3,6 +3,7 @@ import contextlib
 import hashlib
 import os
 import time
+import select
 import sys
 
 import paramiko
@@ -16,25 +17,53 @@ class IgnorePolicy(paramiko.MissingHostKeyPolicy):
 
 
 def ssh_run_command(client, command, timeout=3, sensitive=False):
-    captured_stdout = []
-    captured_stderr = []
-    _, stdout, stderr = client.exec_command(command, timeout=timeout)
-    # while not stdout.channel.exit_status_ready():
-    # This causes stderr to be depleted before doing anything else, for true interactive output
-    # we need to use the channel API directly and use recv_stderr_ready/recv_
-    for chunk in stderr:
-        captured_stderr.append(chunk)
-        end = '' if chunk[-1] == '\n' else '\n'
-        sys.stderr.write('stderr: %s%s' % (chunk, end))
-    for chunk in stdout:
-        captured_stdout.append(chunk)
-        end = '' if chunk[-1] == '\n' else '\n'
-        print('stdout: %s' % chunk, end=end)
+    # Work around circular import
+    from .__main__ import log_error
 
-    if stdout.channel.recv_exit_status() != 0:
+    captured_stdout = []
+    session = client.get_transport().open_session()
+    session.exec_command(command)
+    chunksize = 1024
+    start_time = time.time()
+    while True:
+        (reads_ready, _, _) = select.select([session], [], [], 1)
+        if timeout and time.time() - start_time > timeout:
+            if sensitive:
+                raise ValueError('Timed out waiting for sensitive command to finish')
+            raise ValueError('Timed out waiting for command %r to finish' % command)
+
+        if not reads_ready:
+            continue
+
+        got_data = False
+        if session.recv_ready():
+            chunk = reads_ready[0].recv(chunksize).decode('utf-8')
+            if chunk:
+                got_data = True
+                captured_stdout.append(chunk)
+                print(chunk, end='')
+
+        if session.recv_stderr_ready():
+            chunk = reads_ready[0].recv_stderr(chunksize).decode('utf-8')
+            if chunk:
+                got_data = True
+                log_error(chunk, end='')
+
+        if not got_data:
+            break
+
+    while not session.exit_status_ready():
+        if timeout and time.time() - start_time > timeout:
+            if sensitive:
+                raise ValueError('Timed out waiting for sensitive command to return an exit code')
+            raise ValueError('Timed out waiting for command %r to return an exit code' % command)
+        time.sleep(1)
+
+    exit_status = session.recv_exit_status()
+    if exit_status != 0:
         if sensitive:
-            raise ValueError('Sensitive command failed with exit code %d' % stdout.channel.recv_exit_status())
-        raise ValueError('Command %s failed with exit code %d' % (command, stdout.channel.recv_exit_status()))
+            raise ValueError('Sensitive command failed with exit code %d' % exit_status)
+        raise ValueError('Command %r failed with exit code %d' % (command, exit_status))
 
     return ''.join(captured_stdout)
 

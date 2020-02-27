@@ -9,6 +9,7 @@ from .minions import (
     create_minion,
     destroy_minion,
 )
+from .master import create_master
 from .providers import provider_map
 from .version import __version__
 
@@ -28,18 +29,25 @@ def main(argv=None):
         sys.exit(1)
 
 
-def log_warning(message):
-    if sys.stderr.isatty():
-        sys.stderr.write('%s%s%s\n' % (TerminalColors.WARNING, message, TerminalColors.RESET))
-    else:
-        sys.stderr.write('%s\n' % message)
+def log_warning(message, end='\n'):
+    log_to_stderr_with_color(message, TerminalColors.WARNING, end)
 
 
-def log_error(message):
-    if sys.stderr.isatty():
-        sys.stderr.write('%s%s%s\n' % (TerminalColors.FAIL, message, TerminalColors.RESET))
+def log_error(message, end='\n'):
+    log_to_stderr_with_color(message, TerminalColors.FAIL, end)
+
+
+def log_to_stderr_with_color(message, color, end):
+    out = sys.stderr
+    if out.isatty():
+        out.write(color)
+        out.write(message)
+        out.write(TerminalColors.RESET)
     else:
-        sys.stderr.write('%s\n' % message)
+        out.write(message)
+    if end:
+        out.write(end)
+    out.flush()
 
 
 class HartCLI:
@@ -88,11 +96,14 @@ class HartCLI:
             help='What do you want to do?')
 
         create_minion_parser = self.add_create_minion_parser(subparsers)
+        create_master_parser = self.add_create_master_parser(subparsers)
         destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
         list_regions_parser = self.add_list_regions_parser(subparsers)
         list_sizes_parser = self.add_list_sizes_parser(subparsers)
 
         provider.add_create_minion_arguments(create_minion_parser)
+        # We assume creating a master takes the same arguments as create minion
+        provider.add_create_minion_arguments(create_master_parser)
         provider.add_destroy_minion_arguments(destroy_minion_parser)
         provider.add_list_regions_arguments(list_regions_parser)
         provider.add_list_sizes_arguments(list_sizes_parser)
@@ -112,9 +123,6 @@ class HartCLI:
 
 
     def add_create_minion_parser(self, subparsers):
-        def split_csv(clistring):
-            return clistring.split(',')
-
         def json_parser(value):
             return json.loads(value)
 
@@ -136,6 +144,30 @@ class HartCLI:
         parser.add_argument('--minion-config', help='Minion config in JSON', type=json_parser)
 
         parser.set_defaults(action=self.cli_create_minion)
+        return parser
+
+
+    def add_create_master_parser(self, subparsers):
+        parser = subparsers.add_parser('create-master', help='Create a new saltmaster')
+        parser.add_argument('minion_id')
+        parser.add_argument('-s', '--size',
+            help='The size of the node to create. Default varies with provider.')
+        parser.add_argument('-t', '--tags', type=split_csv, default=[],
+            help='Tags to add to the new node, comma-separated.')
+        parser.add_argument('-S', '--script', help='Path to a script to run on '
+            'the master after salt has been installed. Use this to customize '
+            'your setup and deploy any secrets you might need.')
+        parser.add_argument('-p', '--private-networking', action='store_true',
+            help='Whether to enable private networking on the node')
+        parser.add_argument('-d', '--debian-codename',
+            choices=DEBIAN_VERSIONS.keys(), default='buster',
+            help='Which debian version to create. Default: %(default)s')
+        parser.add_argument('--use-py2', action='store_true',
+            help='Use py2 instead of py3 for saltstack.')
+        parser.add_argument('-a', '--authorize-key',
+            help='An ssh public key to add to .ssh/authorized_keys.')
+
+        parser.set_defaults(action=self.cli_create_master)
         return parser
 
 
@@ -174,6 +206,7 @@ class HartCLI:
         use_py2 = kwargs.pop('use_py2')
         salt_branch = kwargs.pop('salt_branch')
         minion_config = kwargs.pop('minion_config')
+        authorize_key = kwargs.pop('authorize_key')
         try:
             create_minion(
                 minion_id,
@@ -185,6 +218,33 @@ class HartCLI:
                 debian_codename=debian_codename,
                 use_py2=use_py2,
                 minion_config=minion_config,
+                authorize_key=authorize_key,
+                **kwargs
+            )
+        except KeyboardInterrupt:
+            print('Aborted by Ctrl-C or SIGINT, stopping')
+
+
+    def cli_create_master(self, args):
+        kwargs = vars(args)
+        provider = kwargs.pop('provider')
+        minion_id = kwargs.pop('minion_id')
+        region = kwargs.pop('region')
+        size = kwargs.pop('size')
+        private_networking = kwargs.pop('private_networking')
+        debian_codename = kwargs.pop('debian_codename')
+        use_py2 = kwargs.pop('use_py2')
+        script = kwargs.pop('script')
+        try:
+            create_master(
+                minion_id,
+                provider,
+                region,
+                size,
+                private_networking=private_networking,
+                debian_codename=debian_codename,
+                use_py2=use_py2,
+                script=script,
                 **kwargs
             )
         except KeyboardInterrupt:
@@ -218,6 +278,10 @@ class HartCLI:
         provider = kwargs.pop('provider')
         for location in provider.get_regions(**kwargs):
             print('%s (%s)' % (location.name, location.id))
+
+
+def split_csv(clistring):
+    return clistring.split(',')
 
 
 def get_clean_kwargs_from_args(args):

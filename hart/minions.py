@@ -1,6 +1,5 @@
 #!./venv/bin/python
 
-import base64
 import datetime
 import json
 import os
@@ -8,16 +7,14 @@ import subprocess
 import sys
 import time
 import traceback
-from collections import namedtuple
 
 import yaml
-from jinja2 import Template
 
+from . import utils
 from .constants import DEBIAN_VERSIONS
 from .exceptions import UserError
 from .ssh import get_verified_ssh_client, ssh_run_command
 
-HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary node_extra')
 
 
 def create_minion(
@@ -83,8 +80,8 @@ def create_node(
         use_py2=False,
         **kwargs
         ):
-    ssh_canary = create_token()
-    cloud_init_template = get_cloud_init_template()
+    ssh_canary = utils.create_token()
+    cloud_init_template = utils.get_cloud_init_template()
     master_pubkey = get_master_pubkey()
     default_minion_config = {
         'id': minion_id,
@@ -92,7 +89,7 @@ def create_node(
     if minion_config is not None:
         default_minion_config.update(minion_config)
 
-    saltstack_repo = get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
+    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
     cloud_init = cloud_init_template.render(**{
         'random_seed': create_token(),
         'minion_config': yaml.dump(default_minion_config),
@@ -102,7 +99,7 @@ def create_node(
         'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
     })
 
-    key_name = build_ssh_key_name(minion_id)
+    key_name = utils.build_ssh_key_name(minion_id)
 
     if not check_existing_minion(minion_id):
         print('Existing minions were found and did want to overwrite, aborting')
@@ -125,27 +122,13 @@ def create_node(
             node = provider.wait_for_public_ip(node)
             public_ip = node.public_ips[0]
             print('Node running at %s' % public_ip)
-            return HartNode(minion_id, public_ip, node, provider, ssh_key, ssh_canary, extra)
+            return utils.HartNode(minion_id, public_ip, node, provider, ssh_key, ssh_canary, extra)
         except:
             traceback.print_exc()
             if node:
                 sys.stderr.write('Destroying node since it failed initialization\n')
                 provider.destroy_node(node, extra)
             raise
-
-
-def create_token():
-    return base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode('utf-8')
-
-
-def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
-    debian_version = DEBIAN_VERSIONS[debian_codename]
-    if use_py2 and debian_version > 9:
-        raise UserError('saltstack py2 is only available for debian stretch and older')
-    if not use_py2 and debian_version < 9:
-        raise UserError('saltstack py3 is only available for debian stretch and newer')
-    return 'https://repo.saltstack.com/%s/debian/%s/amd64/%s %s main' % (
-        'apt' if use_py2 else 'py3', debian_version, salt_branch, debian_codename)
 
 
 def destroy_minion(minion_id, provider, **kwargs):
@@ -228,18 +211,6 @@ def verify_minion_connection(client, minion_id, username):
     if username != 'root':
         authorized_keys_path = '/home/%s/.ssh/authorized_keys' % username
     ssh_run_command(client, 'rm %s' % authorized_keys_path)
-
-
-def get_cloud_init_template(template_name='minion.sh'):
-    template_path = os.path.join(os.path.dirname(__file__), 'cloud-init', template_name)
-    with open(template_path) as fh:
-        cloud_init_template = Template(fh.read())
-    return cloud_init_template
-
-
-def build_ssh_key_name(minion_id):
-    current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
-    return 'temp-for-%s-at-%s' % (minion_id, current_date)
 
 
 def get_minion_pubkey(client, should_sudo):
