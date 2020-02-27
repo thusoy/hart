@@ -20,7 +20,7 @@ class IgnorePolicy(paramiko.MissingHostKeyPolicy):
             key.get_name(), fingerprint))
 
 
-def ssh_run_command(client, command, timeout=3, sensitive=False):
+def ssh_run_command(client, command, timeout=3):
     # Work around circular import
     from .__main__ import log_error
 
@@ -32,8 +32,6 @@ def ssh_run_command(client, command, timeout=3, sensitive=False):
     while True:
         (reads_ready, _, _) = select.select([session], [], [], 1)
         if timeout and time.time() - start_time > timeout:
-            if sensitive:
-                raise ValueError('Timed out waiting for sensitive command to finish')
             raise ValueError('Timed out waiting for command %r to finish' % command)
 
         if not reads_ready:
@@ -58,15 +56,11 @@ def ssh_run_command(client, command, timeout=3, sensitive=False):
 
     while not session.exit_status_ready():
         if timeout and time.time() - start_time > timeout:
-            if sensitive:
-                raise ValueError('Timed out waiting for sensitive command to return an exit code')
             raise ValueError('Timed out waiting for command %r to return an exit code' % command)
         time.sleep(1)
 
     exit_status = session.recv_exit_status()
     if exit_status != 0:
-        if sensitive:
-            raise ValueError('Sensitive command failed with exit code %d' % exit_status)
         raise ValueError('Command %r failed with exit code %d' % (command, exit_status))
 
     return ''.join(captured_stdout)
