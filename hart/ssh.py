@@ -4,8 +4,10 @@ import hashlib
 import os
 import time
 import select
+import socket
 
 import paramiko
+from paramiko.ssh_exception import SSHException
 
 
 class IgnorePolicy(paramiko.MissingHostKeyPolicy):
@@ -109,7 +111,7 @@ def connect_to_droplet(ip, client_ssh_key, username):
             client.connect(ip, username=username, pkey=client_ssh_key, timeout=3)
             log_action('connect', start_time)
             break
-        except Exception as error:
+        except (socket.error, SSHException) as error:
             print('Could not connect yet, waiting (%s)' % error)
             time.sleep(2)
     else:
