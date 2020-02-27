@@ -91,7 +91,7 @@ def create_node(
 
     saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
     cloud_init = cloud_init_template.render(**{
-        'random_seed': create_token(),
+        'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),
         'ssh_canary': ssh_canary,
         'master_pubkey': master_pubkey,
