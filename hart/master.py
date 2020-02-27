@@ -123,6 +123,7 @@ def connect_to_master(hart_node, script, authorize_key=None):
             ssh_run_command(client, script_path, timeout=None)
 
         master_pubkeys = ssh_run_command(client,
-            'for pubkey in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$pubkey"; done')
+            'for pubkey in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$pubkey"; done',
+            log_stdout=False)
         print('Master created: %s@%s\nssh fingerprints: \n%s' % (
             username, hart_node.public_ip, master_pubkeys))

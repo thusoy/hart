@@ -20,7 +20,7 @@ class IgnorePolicy(paramiko.MissingHostKeyPolicy):
             key.get_name(), fingerprint))
 
 
-def ssh_run_command(client, command, timeout=3):
+def ssh_run_command(client, command, timeout=3, log_stdout=True):
     # Work around circular import
     from .__main__ import log_error
 
@@ -43,7 +43,8 @@ def ssh_run_command(client, command, timeout=3):
             if chunk:
                 got_data = True
                 captured_stdout.append(chunk)
-                print(chunk, end='')
+                if log_stdout:
+                    print(chunk, end='')
 
         if session.recv_stderr_ready():
             chunk = reads_ready[0].recv_stderr(chunksize).decode('utf-8')
