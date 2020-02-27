@@ -1,11 +1,34 @@
-Hart
-====
+# Hart
 
 A highly opinionated, secure alternative to salt-cloud.
 
 
-Local testing
-=============
+## Provider setup
+
+Hart reads configuration from `/etc/hart.toml` if you don't specify a custom
+file with `--config`. This should be a TOML file with the following structure:
+
+```toml
+[providers.do]
+token = "<digital ocean token>"
+
+[providers.ec2]
+aws_access_key_id = "<access key id>"
+aws_secret_access_key = "<secret access key>"
+
+[providers.gce]
+project = "<project_id from the service account credentials>"
+user_id = "<client_email from the service account credentials>"
+key = "<private_key from the service account credentials>"
+
+[providers.vultr]
+token = "<vultr api token>"
+```
+
+Only providers you're planning to use are required.
+
+
+## Local testing
 
 Due to the nature of the project (requiring a salt master and lots of
 interaction with third-party APIs) it's hard to write good unit tests. There is
@@ -14,7 +37,8 @@ a limited set that can be run as follows:
     $ ./test
 
 There's also a small set of integration tests that require setting up test
-accounts with the different providers (put credentials in `hart.toml`):
+accounts with the different providers (put credentials in `hart.toml` in the
+root of the repo):
 
     $ ./test -m integration
 
@@ -41,8 +65,7 @@ Create a file `hart.toml` in the root of the repo with credentials to use for
 development.
 
 
-License
-=======
+## License
 
 This project uses the [Hippocratic License](https://firstdonoharm.dev/), and is
 thus freely available to use for purposes that do not infringe on the United
