@@ -40,7 +40,7 @@ systemd-run \
 # Update the repo to get updated keys and archives, then install https transport
 # for apt before adding the salt repo using https, and gnupg2 for apt-key
 apt-get update
-apt_get_noninteractive install apt-transport-https gnupg2
+apt_get_noninteractive install apt-transport-https gnupg
 
 # Add the salt debian repo key, silencing an inappropriate warning from apt-key
 APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - <<EOF
