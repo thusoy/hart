@@ -61,6 +61,7 @@ def create_master_node(
         'id': minion_id,
         'user': 'saltmaster',
         'file_client': 'local',
+        'state_verbose': False,
     }
 
     saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
