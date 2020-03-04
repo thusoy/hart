@@ -59,6 +59,7 @@ def create_master_node(
     cloud_init_template = utils.get_cloud_init_template('master.sh')
     default_minion_config = {
         'id': minion_id,
+        'user': 'saltmaster',
         'file_client': 'local',
     }
 
