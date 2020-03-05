@@ -9,7 +9,11 @@ mkdir -p /etc/salt/pki/minion
 cat > /etc/salt/pki/minion/minion_master.pub <<EOF
 {{ master_pubkey }}
 EOF
-cat > /etc/salt/minion >>EOF
+cat > /etc/salt/minion <<EOF
+################################
+# Salt minion config from hart #
+################################
+
 {{ minion_config }}
 EOF
 
