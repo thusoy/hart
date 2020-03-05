@@ -32,6 +32,7 @@ def create_master(
         debian_codename,
         tags,
         private_networking,
+        minion_config,
         use_py2,
         **kwargs
     )
@@ -52,6 +53,7 @@ def create_master_node(
         debian_codename='stretch',
         tags=None,
         private_networking=False,
+        minion_config=None,
         use_py2=False,
         **kwargs
         ):
@@ -63,6 +65,8 @@ def create_master_node(
         'file_client': 'local',
         'state_verbose': False,
     }
+    if minion_config is not None:
+        default_minion_config.update(minion_config)
 
     saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
     cloud_init = cloud_init_template.render(**{
