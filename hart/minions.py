@@ -213,7 +213,7 @@ def verify_minion_connection(client, minion_id, username):
 
 def get_minion_pubkey(client, should_sudo):
     _, stdout, stderr = client.exec_command('%scat /etc/salt/pki/minion/minion.pub' % (
-        'sudo ' if should_sudo else '',), timeout=3)
+        'sudo ' if should_sudo else '',), timeout=3, log_stdout=False)
     if stdout.channel.recv_exit_status() != 0:
         raise ValueError('Failed to get minion pubkey: %s' % ''.join(stderr))
 
