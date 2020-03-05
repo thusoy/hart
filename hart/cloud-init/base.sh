@@ -38,7 +38,7 @@ systemd-run \
 {% endif %}
 
 # Update the repo to get updated keys and archives, then install https transport
-# for apt before adding the salt repo using https, and gnupg2 for apt-key
+# for apt before adding the salt repo using https, and gnupg for apt-key
 apt-get update
 apt_get_noninteractive install apt-transport-https gnupg
 
