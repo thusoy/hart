@@ -18,6 +18,7 @@ def create_master(
         tags=None,
         private_networking=False,
         minion_config=None,
+        grains=None,
         use_py2=False,
         script=None,
         authorize_key=None,
@@ -33,6 +34,7 @@ def create_master(
         tags,
         private_networking,
         minion_config,
+        grains,
         use_py2,
         **kwargs
     )
@@ -54,6 +56,7 @@ def create_master_node(
         tags=None,
         private_networking=False,
         minion_config=None,
+        grains=None,
         use_py2=False,
         **kwargs
         ):
@@ -72,6 +75,7 @@ def create_master_node(
     cloud_init = cloud_init_template.render(**{
         'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),
+        'grains': yaml.dump({'grains': grains}) if grains else None,
         'ssh_canary': ssh_canary,
         'saltstack_repo': saltstack_repo,
         'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,

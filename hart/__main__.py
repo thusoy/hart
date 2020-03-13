@@ -135,6 +135,8 @@ class HartCLI:
 
         parser.add_argument('-a', '--authorize-key',
             help='An ssh public key to add to .ssh/authorized_keys.')
+        parser.add_argument('-g', '--grains', type=type_json,
+            help="Grains to write to /etc/salt/minion.d/grains.conf")
 
         parser.set_defaults(action=self.cli_create_master)
         return parser
@@ -143,9 +145,6 @@ class HartCLI:
     def _add_minion_master_shared_arguments(self, parser): # pylint disable=no-self-use
         def type_csv(clistring):
             return clistring.split(',')
-
-        def type_json(value):
-            return json.loads(value)
 
         parser.add_argument('minion_id')
         parser.add_argument('-s', '--size',
@@ -235,6 +234,10 @@ class HartCLI:
         provider = kwargs.pop('provider')
         for location in provider.get_regions(**kwargs):
             print('%s (%s)' % (location.name, location.id))
+
+
+def type_json(value):
+    return json.loads(value)
 
 
 def get_clean_kwargs_from_args(args):

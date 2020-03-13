@@ -19,6 +19,16 @@ EOF
 # Install the core packages needed
 apt_get_noninteractive install salt-master salt-minion
 
+{% if grains %}
+cat > /etc/salt/minion.d/grains.conf <<EOF
+############################
+# File provisioned by hart #
+############################
+
+{{ grains }}
+EOF
+{% endif %}
+
 # Install hart
 apt_get_noninteractive install python3 python3-venv
 python3 -m venv /opt/hart-venv
