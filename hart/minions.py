@@ -58,7 +58,6 @@ def connect_minion(hart_node):
             username) as client:
         hart_node.provider.wait_for_init_script(client, hart_node.node_extra)
         minion_pubkey = get_minion_pubkey(client, should_sudo=username != 'root')
-        print(minion_pubkey)
         trust_minion_key(hart_node.minion_id, minion_pubkey)
         print('Minion added: %s' % hart_node.public_ip)
         verify_minion_connection(client, hart_node.minion_id, username)
@@ -212,9 +211,5 @@ def verify_minion_connection(client, minion_id, username):
 
 
 def get_minion_pubkey(client, should_sudo):
-    _, stdout, stderr = client.exec_command('%scat /etc/salt/pki/minion/minion.pub' % (
-        'sudo ' if should_sudo else '',), timeout=3, log_stdout=False)
-    if stdout.channel.recv_exit_status() != 0:
-        raise ValueError('Failed to get minion pubkey: %s' % ''.join(stderr))
-
-    return ''.join(stdout)
+    cmd = '%scat /etc/salt/pki/minion/minion.pub' % ('sudo ' if should_sudo else '')
+    return ssh_run_command(client, cmd, log_stdout=False)

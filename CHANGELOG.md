@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Crash when creating minion when fetching pubkey.
+
+
 0.12.0 - 2020-03-14
 -------------------
 
