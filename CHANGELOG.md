@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- GCE didn't detect init script completion after some changes on Google's side.
+
+
 0.12.1 - 2020-03-16
 -------------------
 

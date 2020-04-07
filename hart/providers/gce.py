@@ -166,18 +166,14 @@ class GCEProvider(BaseLibcloudProvider):
         _, stdout, _ = client.exec_command(
             'echo $$ && exec tail -f -n +1 /var/log/syslog')
         tail_pid = int(stdout.readline())
-        startup_script_end = re.compile(r'startup-script: Return code (\d+)\.\n$', re.MULTILINE)
         for line in stdout:
             print(line, end='')
-            end_match = startup_script_end.search(line)
-            if end_match:
+            # TODO: This doesn't detect if the init script failed for some reason, need
+            # to find a reliable way to do that
+            if 'Hart init script complete' in line:
                 stdout.channel.close()
                 client.exec_command('kill %d' % tail_pid)
-                return_code = int(end_match.group(1))
-                if return_code == 0:
-                    break
-
-                raise ValueError('Startup script failed with return code %s' % return_code)
+                break
 
 
     def destroy_node(self, node, extra=None, **kwargs):
