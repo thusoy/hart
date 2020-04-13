@@ -10,6 +10,7 @@ UNRELEASED -
 
 ## Fixed
 - Crash when printing user errors.
+- Minion keys are no longer on disk if node failed to connect.
 
 
 0.12.2 - 2020-04-07
