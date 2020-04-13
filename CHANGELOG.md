@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+
+UNRELEASED -
+-------------------
+
+## Fixed
+- Crash when printing user errors.
+
+
 0.12.2 - 2020-04-07
 -------------------
 

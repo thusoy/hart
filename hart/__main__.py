@@ -25,7 +25,7 @@ def main(argv=None):
         args = cli.get_args(argv)
         args.action(args)
     except UserError as error:
-        log_error(error)
+        log_error(str(error))
         sys.exit(1)
 
 
