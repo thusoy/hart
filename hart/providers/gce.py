@@ -105,6 +105,7 @@ class GCEProvider(BaseLibcloudProvider):
         parser.add_argument('-z', '--zone', help='GCE zone to launch in')
         parser.add_argument('-l', '--labels', type=split_csv_keyval,
             help='Comma-separated key=value pairs of labels to add to the node.')
+        parser.add_argument('--subnet', help='The subnet to launch in.')
         parser.add_argument('--volume-size', type=int, default=10,
             help='The size of the boot drive in GB, minimum 10')
         parser.add_argument('--volume-type', default='pd-ssd',
@@ -130,10 +131,14 @@ class GCEProvider(BaseLibcloudProvider):
         if not zone:
             raise UserError('You must specify the GCE zone to launch in')
 
+        subnet_string = kwargs.get('subnet')
+
         zone = self.driver.ex_get_zone(zone)
         image = self.driver.ex_get_image('debian-%d' % DEBIAN_VERSIONS[debian_codename])
         volume_type = kwargs.get('volume_type')
         disk_type = self.driver.ex_get_disktype(volume_type, zone=zone)
+        regional_subnets = self.driver.ex_list_subnetworks(region)
+        subnet = get_selected_or_default_subnet(regional_subnets, subnet_string)
         node = self.driver.create_node(
             name=name_from_minion_id(minion_id),
             size=size,
@@ -141,6 +146,8 @@ class GCEProvider(BaseLibcloudProvider):
             image=None, # Specified in the disk params
             description=minion_id,
             ex_tags=tags,
+            ex_network=subnet.network,
+            ex_subnetwork=subnet,
             ex_metadata={
                 'sshKeys': auth_key,
                 'startup-script': cloud_init,
@@ -200,3 +207,15 @@ def name_from_minion_id(minion_id):
     sanitized_name = minion_id.replace('.', '-')
     hashed_id = hashlib.sha256(minion_id.encode('utf-8')).hexdigest()
     return 'hart-%s-%s' % (sanitized_name[:47], hashed_id[:10])
+
+
+def get_selected_or_default_subnet(subnets, subnet_string):
+    if not subnets:
+        raise UserError('No subnets available in the given region')
+
+    for subnet in subnets:
+        if subnet.name == subnet_string:
+            return subnet
+
+    raise UserError('None of the subnets in %s match %r, should be one of %s' % (
+        subnets[0].region.name, subnet_string, ', '.join(s.name for s in subnets)))

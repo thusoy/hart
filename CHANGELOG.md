@@ -11,6 +11,8 @@ UNRELEASED -
 ## Fixed
 - Crash when printing user errors.
 - Minion keys are no longer on disk if node failed to connect.
+- GCE will now automatically pick the available subnet and network in a zone, and enables
+  specifying this with --subnet if ambigious.
 
 
 0.12.2 - 2020-04-07
