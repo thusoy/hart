@@ -33,6 +33,8 @@ region_pretty_names = {
     'us-east4': 'Ashburn, Northern Virginia, USA',
     'us-west1': 'The Dalles, Oregon, USA',
     'us-west2': 'Los Angeles, California, USA',
+    'us-west3': 'Salt Lake City, Utah, USA',
+    'us-west4': 'Las Vegas, Nevada, USA',
 }
 
 
