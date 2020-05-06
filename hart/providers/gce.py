@@ -215,6 +215,9 @@ def get_selected_or_default_subnet(subnets, subnet_string):
     if not subnets:
         raise UserError('No subnets available in the given region')
 
+    if subnet_string is None and len(subnets) == 1:
+        return subnets[0]
+
     for subnet in subnets:
         if subnet.name == subnet_string:
             return subnet

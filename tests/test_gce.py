@@ -11,6 +11,13 @@ def test_get_selected_or_default_subnet_none():
         gce.get_selected_or_default_subnet([], 'irrelevant')
 
 
+def test_get_only_alternative():
+    first = Mock()
+    first.name = 'first'
+    ret = gce.get_selected_or_default_subnet([first], None)
+    assert ret.name == 'first'
+
+
 def test_get_selected_or_default_subnet_multiple():
     first = Mock()
     first.name = 'first'

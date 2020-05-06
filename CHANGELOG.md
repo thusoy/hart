@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- GCE picks the only available subnet if none was specified.
+
+
 0.12.3 - 2020-04-29
 -------------------
 
