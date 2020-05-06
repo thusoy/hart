@@ -10,6 +10,7 @@ UNRELEASED -
 
 ## Fixed
 - GCE picks the only available subnet if none was specified.
+- GCE hang when creating salt-master.
 
 
 0.12.3 - 2020-04-29

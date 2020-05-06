@@ -161,7 +161,7 @@ class VultrProvider(BaseLibcloudProvider):
         tail_pid = int(stdout.readline())
         for line in stdout:
             print(line, end='')
-            if line.startswith('Hart init script complete'):
+            if line.startswith('hart-init-complete'):
                 stdout.channel.close()
                 client.exec_command('kill %d' % tail_pid)
                 return

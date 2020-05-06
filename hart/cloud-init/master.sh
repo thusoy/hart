@@ -39,3 +39,5 @@ ln -s /opt/hart-venv/bin/hart /usr/bin/hart
 # Disable the salt-minion service as it'll run masterless
 service salt-minion stop
 systemctl disable salt-minion.service
+
+echo 'hart-init-complete'
