@@ -217,6 +217,9 @@ def get_selected_or_default_subnet(subnets, subnet_string):
 
     if subnet_string is None and len(subnets) == 1:
         return subnets[0]
+    elif subnet_string is None:
+        raise UserError('More than one subnet available in %s, need to pick one of %s' % (
+            subnets[0].region.name, subnet_string, ', '.join(s.name for s in subnets)))
 
     for subnet in subnets:
         if subnet.name == subnet_string:

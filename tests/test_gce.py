@@ -18,6 +18,15 @@ def test_get_only_alternative():
     assert ret.name == 'first'
 
 
+def test_get_several_alternatives():
+    first = Mock()
+    first.name = 'first'
+    second = Mock()
+    second.name = 'second'
+    with pytest.raises(UserError):
+        gce.get_selected_or_default_subnet([first, second], None)
+
+
 def test_get_selected_or_default_subnet_multiple():
     first = Mock()
     first.name = 'first'
