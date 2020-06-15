@@ -278,7 +278,7 @@ def enable_network_interfaces_d(minion_id):
         minion_id,
         'file.replace',
         '/etc/network/interfaces',
-        '^#source /etc/network/interfaces.d/*$',
+        '^#source /etc/network/interfaces.d/\\*$',
         'source /etc/network/interfaces.d/*',
         'append_if_not_found=True',
     ])
