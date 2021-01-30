@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELEASED -
 -------------------
 
+## Changed
+- GCE now defaults to turning off OSLogin, assuming you want to use salt to manage ssh keys. This
+  can be disabled with the flag `--enable-oslogin`.
+
 ## Fixed
 - GCE picks the only available subnet if none was specified.
 - GCE hang when creating salt-master.

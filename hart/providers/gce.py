@@ -113,6 +113,8 @@ class GCEProvider(BaseLibcloudProvider):
         parser.add_argument('--volume-type', default='pd-ssd',
             help='Which volume type to use for the boot drive. Default: %(default)s',
             choices=('pd-standard', 'pd-ssd'))
+        parser.add_argument('--enable-oslogin', action='store_true',
+            help='By default OS Login is disabled, pass this flag to enable it for this minion')
         # To use the highest-performing disk on GCE (local ssd mounted over
         # NVMe) we need to mount multiple disks as that can't be the boot disk.
         # Decide on a CLI convention for specifying arbitrary additional disks.
@@ -153,6 +155,9 @@ class GCEProvider(BaseLibcloudProvider):
             ex_metadata={
                 'sshKeys': auth_key,
                 'startup-script': cloud_init,
+                # We assume that if you manage servers with salt you want to use salt to
+                # manage ssh access, but we allow this to be overridden
+                'enable-oslogin': kwargs.get('enable_oslogin', False),
             },
             ex_labels=kwargs.get('labels'),
             ex_disks_gce_struct=[{
