@@ -12,6 +12,7 @@ UNRELEASED -
 - GCE picks the only available subnet if none was specified.
 - GCE hang when creating salt-master.
 - EC2 crashed if trying to list available subnets.
+- EC2 can now manage minions in non-standard VPCs.
 
 
 0.12.3 - 2020-04-29

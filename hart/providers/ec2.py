@@ -150,7 +150,7 @@ class EC2Provider(BaseProvider):
 
         subnet = subnets[0]
         temp_security_group = self.create_temp_security_group(minion_id,
-            kwargs.get('connection_gateway'))
+            kwargs.get('connection_gateway'), subnet['VpcId'])
 
         block_devices = []
         volume_type = kwargs.get('volume_type')
@@ -209,7 +209,10 @@ class EC2Provider(BaseProvider):
         node = Node(id=instance['InstanceId'], name=minion_id, state=instance['State']['Name'],
             public_ips=[], private_ips=[instance['PrivateIpAddress']],
             driver=self.ec2, created_at=instance['LaunchTime'], extra=None)
-        return node, temp_security_group
+        return node, {
+            'groupId': temp_security_group,
+            'vpcId': subnet['VpcId'],
+        }
 
 
     def get_node(self, node):
@@ -248,7 +251,7 @@ class EC2Provider(BaseProvider):
             created_at=instance['LaunchTime'], extra=None)
 
 
-    def create_temp_security_group(self, minion_id, connection_gateway):
+    def create_temp_security_group(self, minion_id, connection_gateway, vpc_id):
         current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
         name = 'temp-for-%s-%s' % (minion_id, current_date)
 
@@ -266,6 +269,7 @@ class EC2Provider(BaseProvider):
         group = self.ec2.create_security_group(
             GroupName=name,
             Description='Temporary group for initial saltmaster ssh initialization',
+            VpcId=vpc_id,
         )
         group_id = group['GroupId']
 
@@ -303,20 +307,32 @@ class EC2Provider(BaseProvider):
         # Delete the temp security group that allowed ssh
         # Detach the security group from the instance. An instance must have at
         # least one security group, so we attach the VPC default group.
-        self.delete_node_security_group(hart_node.node, hart_node.node_extra)
+        self.delete_node_security_group(
+            hart_node.node,
+            hart_node.node_extra['groupId'],
+            hart_node.node_extra['vpcId'],
+        )
 
 
-    def delete_node_security_group(self, node, group_id):
-        print('Deleting temporary security group')
-        response = self.ec2.describe_security_groups(GroupNames=['default'])
+    def delete_node_security_group(self, node, group_id, vpc_id):
+        response = self.ec2.describe_security_groups(
+            Filters=[{
+                'Name': 'group-name',
+                'Values': ['default'],
+            }, {
+                'Name': 'vpc-id',
+                'Values': [vpc_id],
+            }],
+        )
         default_group = response['SecurityGroups'][0]
         self.ec2.modify_instance_attribute(InstanceId=node.id, Groups=[default_group['GroupId']])
+        print('Deleting temporary security group')
         response = self.ec2.delete_security_group(GroupId=group_id)
 
 
     def destroy_node(self, node, extra=None, **kwargs):
         if extra is not None:
-            self.delete_node_security_group(node, extra)
+            self.delete_node_security_group(node, extra['groupId'], extra['vpcId'])
 
         self.ec2.terminate_instances(InstanceIds=[node.id])
 
