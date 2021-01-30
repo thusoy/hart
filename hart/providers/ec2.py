@@ -61,7 +61,7 @@ class EC2Provider(BaseProvider):
 
     @property
     def ec2(self):
-        # Construct this lazily to prevent it region from having to be
+        # Construct this lazily to prevent the region from having to be
         # specified to list regions or sizes
         if self._ec2:
             return self._ec2
