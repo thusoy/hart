@@ -137,8 +137,16 @@ class EC2Provider(BaseProvider):
         elif not subnets:
             raise UserError('No available subnets in %s' % zone)
         elif len(subnets) > 1:
+            subnet_summary = []
+            for subnet in subnets:
+                for tag in subnet.get('Tags', []):
+                    if tag['Key'] == 'Name':
+                        subnet_summary.append('%s (%s)' % (subnet['SubnetId'], tag['Value']))
+                        break
+                else:
+                    subnet_summary.append(subnet['SubnetId'])
             raise UserError('More than one subnet in availability zone, specify'
-                ' which one to use: %s' % (', '.join(s.id for s in subnets)))
+                ' which one to use: %s' % (', '.join(subnet_summary)))
 
         subnet = subnets[0]
         temp_security_group = self.create_temp_security_group(minion_id,
