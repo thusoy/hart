@@ -1,7 +1,7 @@
 import binascii
 import os
 
-from .config import load_config
+from .config import load_config, build_provider_from_config
 from .exceptions import UserError
 
 DEFAULT_ROLE_NAMING_SCHEME = '{unique_id}.{region}.{provider}.{role}'
@@ -18,11 +18,11 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
         else:
             raise UserError('Unknown role %r, no roles defined in config' % role)
 
-    role_provider_config = role_config.get(provider, {})
     merged_config = {}
     merged_config.update(core_config)
     merged_config.update(role_config)
-    merged_config.update(role_provider_config)
+    if provider:
+        merged_config.update(role_config.get(provider.alias, {}))
 
     default_minion_config = {
         # Default to keep retrying a master connection if it fails
@@ -41,7 +41,8 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
         merge_dicts(default_minion_config, minion_config)
 
     if provider is None:
-        provider = merged_config.get('provider')
+        provider_alias = merged_config.get('provider')
+        provider = build_provider_from_config(provider_alias, config, region=merged_config.get('region'))
 
     kwargs = {}
     salt_branch = merged_config.get('salt_branch')
@@ -52,7 +53,7 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
         'minion_id': build_minion_id(core_config.get('role_naming_scheme', DEFAULT_ROLE_NAMING_SCHEME),
             role=role,
             region=merged_config.get('region'),
-            provider=provider,
+            provider=provider.alias,
         ),
         'private_networking': merged_config.get('private_networking', False),
         'provider': provider,
