@@ -20,16 +20,21 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
     merged_config.update(role_config)
     merged_config.update(role_provider_config)
 
-    minion_config = {
+    default_minion_config = {
         # Default to keep retrying a master connection if it fails
         'master_tries': -1,
         'grains': {
             'roles': [role],
         },
     }
+
     saltmaster = core_config.get('saltmaster')
     if saltmaster:
-        minion_config['master'] = saltmaster
+        default_minion_config['master'] = saltmaster
+
+    minion_config = merged_config.get('minion_config', {})
+    if minion_config:
+        merge_dicts(default_minion_config, minion_config)
 
     if provider is None:
         provider = merged_config.get('provider')
@@ -49,7 +54,7 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
         'provider': provider,
         'region': merged_config.get('region'),
         'size': merged_config.get('size'),
-        'minion_config': minion_config,
+        'minion_config': default_minion_config,
         **kwargs,
     }
 
@@ -61,6 +66,16 @@ def build_minion_id(naming_scheme, **kwargs):
     except KeyError as error:
         raise UserError('Invalid minion id template variable {%s}, must be one of %s' % (
             error.args[0], ', '.join('{%s}' % s for s in sorted(kwargs))))
+
+
+def merge_dicts(a, b):
+    # b overwrites leaf values in a
+    for key, val in b.items():
+        if isinstance(val, dict):
+            a[key] = merge_dicts(a[key], val)
+        else:
+            a[key] = val
+    return a
 
 
 def get_unique_id():

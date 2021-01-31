@@ -102,3 +102,25 @@ def test_get_minion_arguments_without_provider(named_tempfile):
             },
         },
     }
+
+
+def test_get_minion_arguments_with_minion_config(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [hart.minion_config.grains]
+        "environment" = "prod"
+
+        [roles.myrole]
+        region = "sfo3"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole', provider='do')
+    assert arguments['minion_config'] == {
+        'master_tries': -1,
+        'grains': {
+            'environment': 'prod',
+            'roles': [
+                'myrole',
+            ],
+        },
+    }
