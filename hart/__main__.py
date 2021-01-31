@@ -11,6 +11,7 @@ from .minions import (
 )
 from .master import create_master
 from .providers import provider_map
+from .roles import get_minion_arguments_for_role
 from .version import __version__
 
 class TerminalColors:
@@ -95,6 +96,7 @@ class HartCLI:
             title='Commands',
             help='What do you want to do?')
 
+        self.add_create_role_parser(subparsers)
         create_minion_parser = self.add_create_minion_parser(subparsers)
         create_master_parser = self.add_create_master_parser(subparsers)
         destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
@@ -119,6 +121,13 @@ class HartCLI:
             sys.exit(1)
 
         return args
+
+
+    def add_create_role_parser(self, subparsers):
+        parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
+        parser.add_argument('role', help='Name of the role')
+        parser.set_defaults(action=self.cli_create_role)
+        return parser
 
 
     def add_create_minion_parser(self, subparsers):
@@ -188,6 +197,13 @@ class HartCLI:
 
         parser.set_defaults(action=self.cli_list_sizes)
         return parser
+
+
+    def cli_create_role(self, args):
+        kwargs = get_minion_arguments_for_role(args.config, args.role, args.provider)
+        for key, val in kwargs.items():
+            setattr(args, key, val)
+        self.cli_create_minion(args)
 
 
     def cli_create_minion(self, args):
