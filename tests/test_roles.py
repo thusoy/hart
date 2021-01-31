@@ -8,7 +8,7 @@ from hart.exceptions import UserError
 from hart.roles import get_minion_arguments_for_role, build_minion_id
 
 
-def test_create_role_provider_inheritance(named_tempfile):
+def test_get_minion_arguments_provider_inheritance(named_tempfile):
     named_tempfile.write(textwrap.dedent('''
         [hart]
         saltmaster = "salt.example.com"
@@ -32,15 +32,16 @@ def test_create_role_provider_inheritance(named_tempfile):
         'region': 'eu-central-1',
         'size': 't3.nano',
         'private_networking': True,
+        'salt_branch': '3001',
         'minion_config': {
             'master': 'salt.example.com',
             'master_tries': -1,
             'grains': {
                 'roles': [
                     'myrole',
-                ]
-            }
-        }
+                ],
+            },
+        },
     }
 
 
@@ -74,19 +75,30 @@ def test_build_minion_id_invalid_parameter():
 
 
 
-# def test_create_role(named_tempfile):
-#     named_tempfile.write(textwrap.dedent('''
-#         [hart]
-#         saltmaster = "salt.example.com"
+def test_get_minion_arguments_without_provider(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [roles.myrole]
+        private_networking = true
+        provider = "do"
+        size = "s-1vcpu-1gb"
+        region = "sfo3"
+    ''').encode('utf-8'))
+    named_tempfile.close()
 
-#         [roles.myrole]
-#         private_networking = true
-#         provider = "do"
-#         size = "size = "s-1vcpu-1gb""
-#         region = "sfo3"
-#     ''').encode('utf-8'))
-#     named_tempfile.close()
-
-
-#     get_minion_arguments_for_role(named_tempfile.name, 'myrole')
-#     assert isinstance(provider, DOProvider)
+    with mock.patch('hart.roles.get_unique_id', lambda: 'unique'):
+        arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole')
+    assert arguments == {
+        'minion_id': 'unique.sfo3.do.myrole',
+        'provider': 'do',
+        'region': 'sfo3',
+        'size': 's-1vcpu-1gb',
+        'private_networking': True,
+        'minion_config': {
+            'master_tries': -1,
+            'grains': {
+                'roles': [
+                    'myrole',
+                ],
+            },
+        },
+    }

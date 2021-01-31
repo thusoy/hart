@@ -31,9 +31,18 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
     if saltmaster:
         minion_config['master'] = saltmaster
 
+    if provider is None:
+        provider = merged_config.get('provider')
+
+    kwargs = {}
+    salt_branch = merged_config.get('salt_branch')
+    if salt_branch:
+        kwargs['salt_branch'] = salt_branch
+
     return {
         'minion_id': build_minion_id(core_config.get('role_naming_scheme', DEFAULT_ROLE_NAMING_SCHEME),
             role=role,
+            region=merged_config.get('region'),
             provider=provider,
         ),
         'private_networking': merged_config.get('private_networking', False),
@@ -41,6 +50,7 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
         'region': merged_config.get('region'),
         'size': merged_config.get('size'),
         'minion_config': minion_config,
+        **kwargs,
     }
 
 
