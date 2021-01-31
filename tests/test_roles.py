@@ -56,6 +56,11 @@ def test_get_minion_arguments_for_invalid_role(named_tempfile):
         get_minion_arguments_for_role(named_tempfile.name, 'foo')
 
 
+def test_get_minion_arguments_for_invalid_role_no_roles(named_tempfile):
+    with pytest.raises(UserError, match="Unknown role 'foo', no roles defined in config"):
+        get_minion_arguments_for_role(named_tempfile.name, 'foo')
+
+
 def test_build_templated_minion_id():
     assert build_minion_id('{role}.{zone}.{provider}.example',
         role='foo',

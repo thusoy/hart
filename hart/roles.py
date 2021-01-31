@@ -11,8 +11,12 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
     core_config = config.get('hart', {})
     role_config = config.get('roles', {}).get(role)
     if role_config is None:
-        raise UserError('Unknown role %r, must be one of %s' % (
-            role, ', '.join(repr(r) for r in config.get('roles', {}))))
+        roles = config.get('roles', {})
+        if roles:
+            raise UserError('Unknown role %r, must be one of %s' % (
+                role, ', '.join(repr(r) for r in config.get('roles', {}))))
+        else:
+            raise UserError('Unknown role %r, no roles defined in config' % role)
 
     role_provider_config = role_config.get(provider, {})
     merged_config = {}
