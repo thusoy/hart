@@ -38,6 +38,7 @@ region_pretty_names = {
 
 
 class GCEProvider(BaseLibcloudProvider):
+    alias = 'gce'
 
     def __init__(self, user_id, key, project, region=None, **kwargs):
         constructor = get_driver(Provider.GCE)

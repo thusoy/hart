@@ -10,6 +10,7 @@ from .libcloud import BaseLibcloudProvider
 
 
 class DOProvider(BaseLibcloudProvider):
+    alias = 'do'
 
     def __init__(self, token, **kwargs):
         constructor = get_driver(Provider.DIGITAL_OCEAN)

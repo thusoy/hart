@@ -53,6 +53,7 @@ region_to_location_map = {
 
 class EC2Provider(BaseProvider):
     username = 'admin'
+    alias = 'ec2'
 
     def __init__(self, aws_access_key_id, aws_secret_access_key, region=None):
         self.aws_access_key_id = aws_access_key_id

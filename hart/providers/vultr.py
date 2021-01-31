@@ -13,6 +13,7 @@ from ..exceptions import UserError
 
 
 class VultrProvider(BaseLibcloudProvider):
+    alias = 'vultr'
 
     def __init__(self, token, **kwargs):
         constructor = get_driver(Provider.VULTR)
