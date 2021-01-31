@@ -14,7 +14,6 @@ from .constants import DEBIAN_VERSIONS
 from .ssh import get_verified_ssh_client, ssh_run_command
 
 
-
 def create_minion(
         minion_id,
         provider,
