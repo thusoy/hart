@@ -39,7 +39,7 @@ class DOProvider(BaseLibcloudProvider):
             'ssh_keys': [key_fingerprint],
             'private_networking': private_networking,
             'tags': tags,
-            'ipv6': kwargs.enable_ipv6,
+            'ipv6': kwargs.get('enable_ipv6'),
         })
         return node, None
 

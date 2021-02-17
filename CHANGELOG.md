@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- DO crash around `--enable-ipv6` usage.
+
+
 0.13.0 - 2021-02-17
 -------------------
 
