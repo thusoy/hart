@@ -16,6 +16,11 @@ class DOProvider(BaseLibcloudProvider):
         self.driver = constructor(token, api_version='v2')
 
 
+    def add_create_minion_arguments(self, parser):
+        parser.add_argument('-6', '--enable-ipv6', action='store_true',
+            help='Enable IPv6 on the droplet')
+
+
     def create_node(self,
             minion_id,
             region,
@@ -34,6 +39,7 @@ class DOProvider(BaseLibcloudProvider):
             'ssh_keys': [key_fingerprint],
             'private_networking': private_networking,
             'tags': tags,
+            'ipv6': kwargs.enable_ipv6,
         })
         return node, None
 

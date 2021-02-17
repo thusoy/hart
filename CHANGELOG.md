@@ -12,6 +12,9 @@ UNRELEASED -
 - GCE now defaults to turning off OSLogin, assuming you want to use salt to manage ssh keys. This
   can be disabled with the flag `--enable-oslogin`.
 
+## Added
+- You can enable IPv6 on DO droplets by passing `--enable-ipv6`.
+
 ## Fixed
 - GCE picks the only available subnet if none was specified.
 - GCE hang when creating salt-master.
