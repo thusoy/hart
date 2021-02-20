@@ -32,6 +32,9 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
     provider_config = role_config.get(provider.alias, {})
     merged_config.update(provider_config)
 
+    region_config = provider_config.get(region, {})
+    merged_config.update(region_config)
+
     # We might not know the region until getting the provider config, thus try
     # to get it again
     if region is None:

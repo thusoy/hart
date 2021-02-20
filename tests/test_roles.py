@@ -47,6 +47,44 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
     }
 
 
+def test_get_minion_arguments_region_inheritance(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [hart]
+        saltmaster = "salt.example.com"
+        role_naming_scheme = "{role}.{provider}.example.com"
+        salt_branch = "3002"
+
+        [roles.myrole.do]
+        size = "s-v2vcpu-2gb"
+
+        [roles.myrole.do.sfo3]
+        private_networking = true
+        size = "s-4vcpu-4gb"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    provider = DOProvider('foo')
+    arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole',
+        provider=provider, region='sfo3')
+    assert arguments == {
+        'minion_id': 'myrole.do.example.com',
+        'provider': provider,
+        'region': 'sfo3',
+        'size': 's-4vcpu-4gb',
+        'private_networking': True,
+        'salt_branch': '3002',
+        'minion_config': {
+            'master': 'salt.example.com',
+            'master_tries': -1,
+            'grains': {
+                'roles': [
+                    'myrole',
+                ],
+            },
+        },
+    }
+
+
 def test_get_minion_arguments_for_invalid_role(named_tempfile):
     named_tempfile.write(textwrap.dedent('''
         [roles.myrole]
