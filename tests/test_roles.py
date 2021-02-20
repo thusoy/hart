@@ -1,3 +1,4 @@
+import datetime
 import re
 import textwrap
 from unittest import mock
@@ -109,13 +110,21 @@ def test_build_templated_minion_id():
     ) == 'foo.bar.ec2.example'
 
 
+def test_build_templated_minion_id_date_parameters():
+    now = datetime.datetime.utcnow()
+    assert build_minion_id('{year}{month}{day}.{role}.example',
+        role='foo',
+    ) == '%s.foo.example' % (now.strftime('%Y%m%d'))
+
+
 def test_build_unique_minion_id():
     minion_id = build_minion_id('{unique_id}.example')
     assert re.match(r'^[a-f0-9]{8}\.example$', minion_id) is not None
 
 
 def test_build_minion_id_invalid_parameter():
-    with pytest.raises(UserError, match=r"Invalid minion id template variable {foo}, must be one of {role}, {unique_id}"):
+    with pytest.raises(UserError, match=r"Invalid minion id template variable "
+            "{foo}, must be one of {day}, {month}, {role}, {unique_id}, {year}"):
         build_minion_id('{foo}', role='1')
 
 

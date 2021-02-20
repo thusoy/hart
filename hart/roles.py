@@ -1,4 +1,5 @@
 import binascii
+import datetime
 import os
 
 from .config import load_config, build_provider_from_config
@@ -81,7 +82,11 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
 
 
 def build_minion_id(naming_scheme, **kwargs):
+    now = datetime.datetime.utcnow()
     kwargs['unique_id'] = get_unique_id()
+    kwargs['year'] = now.strftime('%Y')
+    kwargs['month'] = now.strftime('%m')
+    kwargs['day'] = now.strftime('%d')
     try:
         return naming_scheme.format(**kwargs)
     except KeyError as error:
