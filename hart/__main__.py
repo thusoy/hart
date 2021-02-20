@@ -96,7 +96,7 @@ class HartCLI:
             title='Commands',
             help='What do you want to do?')
 
-        self.add_create_role_parser(subparsers)
+        self.add_create_minion_from_role_parser(subparsers)
         create_minion_parser = self.add_create_minion_parser(subparsers)
         create_master_parser = self.add_create_master_parser(subparsers)
         destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
@@ -123,7 +123,7 @@ class HartCLI:
         return args
 
 
-    def add_create_role_parser(self, subparsers):
+    def add_create_minion_from_role_parser(self, subparsers):
         parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
         parser.add_argument('role', help='Name of the role')
         parser.set_defaults(action=self.cli_create_role)
