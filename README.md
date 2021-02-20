@@ -38,6 +38,8 @@ the hart config file:
 ```toml
 [providers.do]
 token = "<digital ocean token>"
+# Define a default naming scheme for minions
+role_naming_scheme = "{unique_id}.{region}.{provider}.{role}.example.com"
 # Define a default region for this provider
 region = "sfo3"
 
