@@ -6,7 +6,7 @@ from .exceptions import UserError
 
 DEFAULT_MINION_NAMING_SCHEME = '{unique_id}.{region}.{provider}.{role}'
 
-def get_minion_arguments_for_role(config_file, role, provider=None):
+def get_minion_arguments_for_role(config_file, role, provider=None, region=None):
     config = load_config(config_file)
     core_config = config.get('hart', {})
     role_config = config.get('roles', {}).get(role)
@@ -18,11 +18,18 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
         else:
             raise UserError('Unknown role %r, no roles defined in config' % role)
 
+    if region is None:
+        region = merged_config.get('region')
+
     merged_config = {}
     merged_config.update(core_config)
     merged_config.update(role_config)
     if provider:
-        merged_config.update(role_config.get(provider.alias, {}))
+        provider_config = role_config.get(provider.alias, {})
+        merged_config.update(provider_config)
+
+        region_config = provider_config.get(region, {})
+        merged_config.update(region_config)
 
     default_minion_config = {
         # Default to keep retrying a master connection if it fails
@@ -42,7 +49,7 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
 
     if provider is None:
         provider_alias = merged_config.get('provider')
-        provider = build_provider_from_config(provider_alias, config, region=merged_config.get('region'))
+        provider = build_provider_from_config(provider_alias, config, region=region)
 
     kwargs = {}
     salt_branch = merged_config.get('salt_branch')
@@ -52,12 +59,12 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
     return {
         'minion_id': build_minion_id(core_config.get('role_naming_scheme', DEFAULT_MINION_NAMING_SCHEME),
             role=role,
-            region=merged_config.get('region'),
+            region=region,
             provider=provider.alias,
         ),
         'private_networking': merged_config.get('private_networking', False),
         'provider': provider,
-        'region': merged_config.get('region'),
+        'region': region,
         'size': merged_config.get('size'),
         'minion_config': default_minion_config,
         **kwargs,

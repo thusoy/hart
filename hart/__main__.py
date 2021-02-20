@@ -200,7 +200,7 @@ class HartCLI:
 
 
     def cli_create_minion_from_role(self, args):
-        kwargs = get_minion_arguments_for_role(args.config, args.role, args.provider)
+        kwargs = get_minion_arguments_for_role(args.config, args.role, args.provider, args.region)
         for key, val in kwargs.items():
             setattr(args, key, val)
         self.cli_create_minion(args)
