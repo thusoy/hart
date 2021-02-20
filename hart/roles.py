@@ -4,7 +4,7 @@ import os
 from .config import load_config, build_provider_from_config
 from .exceptions import UserError
 
-DEFAULT_ROLE_NAMING_SCHEME = '{unique_id}.{region}.{provider}.{role}'
+DEFAULT_MINION_NAMING_SCHEME = '{unique_id}.{region}.{provider}.{role}'
 
 def get_minion_arguments_for_role(config_file, role, provider=None):
     config = load_config(config_file)
@@ -50,7 +50,7 @@ def get_minion_arguments_for_role(config_file, role, provider=None):
         kwargs['salt_branch'] = salt_branch
 
     return {
-        'minion_id': build_minion_id(core_config.get('role_naming_scheme', DEFAULT_ROLE_NAMING_SCHEME),
+        'minion_id': build_minion_id(core_config.get('role_naming_scheme', DEFAULT_MINION_NAMING_SCHEME),
             role=role,
             region=merged_config.get('region'),
             provider=provider.alias,
