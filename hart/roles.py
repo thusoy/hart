@@ -52,9 +52,14 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
         provider = build_provider_from_config(provider_alias, config, region=region)
 
     kwargs = {}
+
     salt_branch = merged_config.get('salt_branch')
     if salt_branch:
         kwargs['salt_branch'] = salt_branch
+
+    size = merged_config.get('size')
+    if size:
+        kwargs['size'] = size
 
     return {
         'minion_id': build_minion_id(core_config.get('role_naming_scheme', DEFAULT_MINION_NAMING_SCHEME),
@@ -65,7 +70,6 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
         'private_networking': merged_config.get('private_networking', False),
         'provider': provider,
         'region': region,
-        'size': merged_config.get('size'),
         'minion_config': default_minion_config,
         **kwargs,
     }
