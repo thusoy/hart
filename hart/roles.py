@@ -18,18 +18,24 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
         else:
             raise UserError('Unknown role %r, no roles defined in config' % role)
 
-    if region is None:
-        region = merged_config.get('region')
-
     merged_config = {}
     merged_config.update(core_config)
     merged_config.update(role_config)
-    if provider:
-        provider_config = role_config.get(provider.alias, {})
-        merged_config.update(provider_config)
 
-        region_config = provider_config.get(region, {})
-        merged_config.update(region_config)
+    if region is None:
+        region = merged_config.get('region')
+
+    if provider is None:
+        provider_alias = merged_config.get('provider')
+        provider = build_provider_from_config(provider_alias, config, region=region)
+
+    provider_config = role_config.get(provider.alias, {})
+    merged_config.update(provider_config)
+
+    # We might not know the region until getting the provider config, thus try
+    # to get it again
+    if region is None:
+        region = merged_config.get('region')
 
     default_minion_config = {
         # Default to keep retrying a master connection if it fails
@@ -46,10 +52,6 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
     minion_config = merged_config.get('minion_config', {})
     if minion_config:
         merge_dicts(default_minion_config, minion_config)
-
-    if provider is None:
-        provider_alias = merged_config.get('provider')
-        provider = build_provider_from_config(provider_alias, config, region=region)
 
     kwargs = {}
 
