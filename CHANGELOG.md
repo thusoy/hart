@@ -10,6 +10,9 @@ UNRELEASED -
 
 ## Added
 - Support for the af-south-1 and eu-south-1 EC2 regions.
+- You can now manage a high-level resource called a "role". A role is basically
+  a named group of parameters to create a minion, and is usually what you'd use
+  in the salt topfile to allocate states to a minion.
 
 
 0.13.1 - 2021-02-17
