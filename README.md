@@ -28,6 +28,39 @@ token = "<vultr api token>"
 Only providers you're planning to use are required.
 
 
+## Configure roles
+
+The most high-level interface to create minions is
+`hart create-minion-from-role <role>`. You define parameters for each role in
+the hart config file:
+
+
+```toml
+[providers.do]
+token = "<digital ocean token>"
+# Define a default region for this provider
+region = "sfo3"
+
+[roles.db]
+size = "s-4vcpu-8gb"
+
+[roles.app]
+size = "s-2vcpu-2gb"
+
+[roles.app.ec2]
+# You can override parameters for a role when running under a given provider
+subnet = "<some-ec2-subnet>"
+size = "t3.medium"
+
+[roles.app.do.nyc3]
+# You can override parameters for each region in each provider too
+size = "s-3vcpu-3gb"
+```
+
+The available parameters are the same as those used by the lower-level API
+`hart create-minion`.
+
+
 ## Local testing
 
 Due to the nature of the project (requiring a salt master and lots of
