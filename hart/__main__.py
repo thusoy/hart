@@ -126,7 +126,7 @@ class HartCLI:
     def add_create_minion_from_role_parser(self, subparsers):
         parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
         parser.add_argument('role', help='Name of the role')
-        parser.set_defaults(action=self.cli_create_role)
+        parser.set_defaults(action=self.cli_create_minion_from_role)
         return parser
 
 
@@ -199,7 +199,7 @@ class HartCLI:
         return parser
 
 
-    def cli_create_role(self, args):
+    def cli_create_minion_from_role(self, args):
         kwargs = get_minion_arguments_for_role(args.config, args.role, args.provider)
         for key, val in kwargs.items():
             setattr(args, key, val)
