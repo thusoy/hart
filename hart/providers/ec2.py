@@ -32,7 +32,7 @@ region_to_location_map = {
     'af-south-1': 'Africa (Cape Town)',
     'ap-east-1': 'Asia Pacific (Hong Kong)',
     'ap-south-1': 'Asia Pacific (Mumbai)',
-    'ap-northeast-3': 'Asia Pacific (Osaka-Local)',
+    'ap-northeast-3': 'Asia Pacific (Osaka)',
     'ap-northeast-2': 'Asia Pacific (Seoul)',
     'ap-southeast-1': 'Asia Pacific (Singapore)',
     'ap-southeast-2': 'Asia Pacific (Sydney)',
