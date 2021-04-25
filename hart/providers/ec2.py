@@ -29,6 +29,7 @@ region_to_location_map = {
     'us-east-1': 'US East (N. Virginia)',
     'us-west-1': 'US West (N. California)',
     'us-west-2': 'US West (Oregon)',
+    'af-south-1': 'Africa (Cape Town)',
     'ap-east-1': 'Asia Pacific (Hong Kong)',
     'ap-south-1': 'Asia Pacific (Mumbai)',
     'ap-northeast-3': 'Asia Pacific (Osaka-Local)',
@@ -44,6 +45,7 @@ region_to_location_map = {
     'eu-west-2': 'EU (London)',
     'eu-west-3': 'EU (Paris)',
     'eu-north-1': 'EU (Stockholm)',
+    'eu-south-1': 'EU (Milan)',
     'sa-east-1': 'South America (Sao Paulo)',
     'me-south-1': 'Middle East (Bahrain)',
 }
