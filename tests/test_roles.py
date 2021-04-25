@@ -193,3 +193,18 @@ def test_setting_provider_extensions(named_tempfile):
     arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole', provider=provider)
 
     assert arguments['volume_type'] == 'io1'
+
+
+def test_use_provider_extension_in_minion_id(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [roles.myrole.ec2]
+        region = "eu-south-1"
+        zone = "eu-south-1a"
+        role_naming_scheme = "{zone}.{role}"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    provider = EC2Provider('key_id', 'secret_key')
+    arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole', provider=provider)
+
+    assert arguments['minion_id'] == 'eu-south-1a.myrole'

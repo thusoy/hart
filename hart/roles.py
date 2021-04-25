@@ -74,6 +74,7 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
             role=role,
             region=region,
             provider=provider.alias,
+            **merged_config,
         ),
         'provider': provider,
         'region': region,
