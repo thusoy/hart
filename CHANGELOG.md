@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Added
+- Support for the af-south-1 and eu-south-1 EC2 regions.
+
+
 0.13.1 - 2021-02-17
 -------------------
 
