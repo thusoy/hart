@@ -36,6 +36,7 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
         'size': 't3.nano',
         'private_networking': True,
         'salt_branch': '3001',
+        'zone': 'eu-central-1a',
         'minion_config': {
             'master': 'salt.example.com',
             'master_tries': -1,
@@ -128,7 +129,6 @@ def test_build_minion_id_invalid_parameter():
         build_minion_id('{foo}', role='1')
 
 
-
 def test_get_minion_arguments_without_provider(named_tempfile):
     named_tempfile.write(textwrap.dedent('''
         [roles.myrole]
@@ -179,3 +179,17 @@ def test_get_minion_arguments_with_minion_config(named_tempfile):
             ],
         },
     }
+
+
+def test_setting_provider_extensions(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [roles.myrole.ec2]
+        region = "eu-south-1"
+        volume_type = "io1"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    provider = EC2Provider('key_id', 'secret_key')
+    arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole', provider=provider)
+
+    assert arguments['volume_type'] == 'io1'
