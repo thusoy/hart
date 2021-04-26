@@ -22,7 +22,10 @@ def get_provider_for_role(config_file, role, region):
     return build_provider_from_config(provider_alias, config, region=region)
 
 
-def get_minion_arguments_for_role(config_file, role, provider=None, region=None):
+def get_minion_arguments_for_role(config_file, role, provider=None, region=None, cli_kwargs=None):
+    if cli_kwargs is None:
+        cli_kwargs = {}
+
     config = load_config(config_file)
     core_config = config.get('hart', {})
     role_config = get_role_config(config, role)
@@ -43,11 +46,19 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
     region_config = provider_config.pop(region, {})
     merged_config.update(provider_config)
     merged_config.update(region_config)
+    merged_config.update(cli_kwargs)
+
+    # Remove some values that might be added in the cli kwargs that we're
+    # already parsing
+    merged_config.pop('provider', None)
+    merged_config.pop('role', None)
 
     # We might not know the region until getting the provider config, thus try
     # to get it again
     if region is None:
         region = merged_config.pop('region')
+    else:
+        merged_config.pop('region', None)
 
     size = merged_config.setdefault('size', provider.default_size)
 

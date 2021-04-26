@@ -222,6 +222,24 @@ def test_use_provider_extension_in_minion_id(named_tempfile):
     assert arguments['minion_id'] == 'eu-south-1a.myrole'
 
 
+def test_use_cli_arguments_in_minion_id(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [roles.myrole.ec2]
+        region = "eu-south-1"
+        role_naming_scheme = "{zone}.{role}"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    provider = EC2Provider('key_id', 'secret_key')
+    arguments = get_minion_arguments_for_role(
+        named_tempfile.name, 'myrole', provider=provider, cli_kwargs={
+            'zone': 'us-east4-c',
+            'provider': 'ec2', # This shouldn't conflict with the manually provided kwarg
+        })
+
+    assert arguments['minion_id'] == 'us-east4-c.myrole'
+
+
 def test_get_provider_from_role(named_tempfile):
     named_tempfile.write(textwrap.dedent('''
         [providers.ec2]
