@@ -51,6 +51,12 @@ def log_to_stderr_with_color(message, color, end):
     out.flush()
 
 
+class DefaultArgumentString(str):
+    # If this is used for default values in argparse we can detect when a
+    # default is being used vs being set explicitly
+    pass
+
+
 class HartCLI:
     def __init__(self):
         if sys.getfilesystemencoding() == 'ascii':
@@ -140,7 +146,7 @@ class HartCLI:
         parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
         parser.add_argument('role', help='Name of the role')
         self._add_minion_master_role_shared_arguments(parser)
-        parser.set_defaults(action=self.cli_create_minion_from_role)
+        parser.set_defaults(action=self.create_cli_create_minion_from_role(parser))
         return parser
 
 
@@ -180,11 +186,11 @@ class HartCLI:
         parser.add_argument('-p', '--private-networking', action='store_true',
             help='Whether to enable private networking on the node')
         parser.add_argument('-d', '--debian-codename',
-            choices=DEBIAN_VERSIONS.keys(), default='buster',
+            choices=DEBIAN_VERSIONS.keys(), default=DefaultArgumentString('buster'),
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')
-        parser.add_argument('--salt-branch', default='latest',
+        parser.add_argument('--salt-branch', default=DefaultArgumentString('latest'),
             help='The salt branch to use. Default: %(default)s')
         parser.add_argument('--minion-config', type=type_json,
             help='Minion config in JSON')
@@ -214,12 +220,21 @@ class HartCLI:
         return parser
 
 
-    def cli_create_minion_from_role(self, args):
-        kwargs = get_minion_arguments_for_role(
-            args.config, args.role, args.provider, args.region, vars(args))
-        for key, val in kwargs.items():
-            setattr(args, key, val)
-        self.cli_create_minion(args)
+    def create_cli_create_minion_from_role(self, parser):
+        def cli_create_minion_from_role(args):
+            cli_kwargs = {}
+            for key, val in vars(args).items():
+                if key in ('provider', 'role'):
+                    continue
+                if val is not parser.get_default(key):
+                    cli_kwargs[key] = val
+
+            kwargs = get_minion_arguments_for_role(
+                args.config, args.role, args.provider, args.region, cli_kwargs)
+            for key, val in kwargs.items():
+                setattr(args, key, val)
+            self.cli_create_minion(args)
+        return cli_create_minion_from_role
 
 
     def cli_create_minion(self, args):

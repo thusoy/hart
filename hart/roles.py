@@ -48,11 +48,6 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None,
     merged_config.update(region_config)
     merged_config.update(cli_kwargs)
 
-    # Remove some values that might be added in the cli kwargs that we're
-    # already parsing
-    merged_config.pop('provider', None)
-    merged_config.pop('role', None)
-
     # We might not know the region until getting the provider config, thus try
     # to get it again
     if region is None:

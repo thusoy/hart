@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Enable passing defaults on the CLI to override role config.
+
+
 0.14.3 - 2021-04-26
 -------------------
 
