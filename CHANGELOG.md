@@ -10,6 +10,7 @@ UNRELEASED -
 
 ## Fixed
 - Enable passing defaults on the CLI to override role config.
+- Fix crash if using provider default size.
 
 
 0.14.3 - 2021-04-26

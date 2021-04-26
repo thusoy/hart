@@ -133,7 +133,7 @@ class GCEProvider(BaseLibcloudProvider):
             size=None,
             **kwargs):
         if size is None:
-            size = default_size
+            size = self.default_size
 
         zone = kwargs.get('zone')
         if not zone:

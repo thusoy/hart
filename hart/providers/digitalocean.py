@@ -34,7 +34,7 @@ class DOProvider(BaseLibcloudProvider):
             size=None,
             **kwargs):
         if size is None:
-            size = default_size
+            size = self.default_size
 
         key_fingerprint = pubkey_to_fingerprint(auth_key.pubkey)
         size = self.get_size(size)

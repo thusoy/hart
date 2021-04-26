@@ -32,7 +32,7 @@ class VultrProvider(BaseLibcloudProvider):
             size=None,
             **kwargs):
         if size is None:
-            size = default_size
+            size = self.default_size
 
         size = self.get_size(size)
         image = self.get_image(debian_codename)
