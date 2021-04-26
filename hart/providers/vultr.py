@@ -13,6 +13,8 @@ from ..exceptions import UserError
 
 
 class VultrProvider(BaseLibcloudProvider):
+    alias = 'vultr'
+    default_size = '201'
 
     def __init__(self, token, **kwargs):
         constructor = get_driver(Provider.VULTR)
@@ -27,8 +29,11 @@ class VultrProvider(BaseLibcloudProvider):
             cloud_init,
             private_networking,
             tags,
-            size='201',
+            size=None,
             **kwargs):
+        if size is None:
+            size = default_size
+
         size = self.get_size(size)
         image = self.get_image(debian_codename)
         location = self.get_location(region)

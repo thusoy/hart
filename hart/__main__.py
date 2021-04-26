@@ -11,6 +11,7 @@ from .minions import (
 )
 from .master import create_master
 from .providers import provider_map
+from .roles import get_minion_arguments_for_role
 from .version import __version__
 
 class TerminalColors:
@@ -61,8 +62,8 @@ class HartCLI:
     def get_args(self, argv):
         parser = argparse.ArgumentParser(prog='hart', add_help=False)
 
-        parser.add_argument('-P', '--provider', choices=provider_map.keys(), default='do',
-            help='Which VPS provider to use. Default: %(default)s')
+        parser.add_argument('-P', '--provider', choices=provider_map.keys(),
+            help='Which VPS provider to use.')
         parser.add_argument('-R', '--region',
             help='Which region to create the node in. Default: %(default)s')
         parser.add_argument('-c', '--config', default='/etc/hart.toml',
@@ -71,13 +72,36 @@ class HartCLI:
         parser.add_argument('-h', '--help', action='store_true', help='Print help')
         parser.add_argument('-v', '--version', action='version', version='hart v%s' % __version__)
 
+        subparsers = parser.add_subparsers(dest='command',
+            title='Commands',
+            help='What do you want to do?')
+
+        create_minion_from_role_parser = self.add_create_minion_from_role_parser(subparsers)
+        create_minion_parser = self.add_create_minion_parser(subparsers)
+        create_master_parser = self.add_create_master_parser(subparsers)
+        destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
+        list_regions_parser = self.add_list_regions_parser(subparsers)
+        list_sizes_parser = self.add_list_sizes_parser(subparsers)
+
         # Do an initial parse of just the provider arguments, to be able to add
-        # provider-specific arguments to the full parse
+        # provider-specific arguments to the full parse. If a provider is given
+        # on the command line that takes precedence, otherwise when creating
+        # from a role there might be a provider specified in the config file,
+        # use that.
         provider_args, _ = parser.parse_known_args(argv)
+        provider = None
 
         try:
-            provider = get_provider(provider_args.provider, provider_args.config,
-                provider_args.region)
+            if provider_args.provider:
+                provider = get_provider(provider_args.provider, provider_args.config,
+                    provider_args.region)
+            elif provider_args.command == 'create-minion-from-role':
+                create_minion_kwargs = get_minion_arguments_for_role(
+                    provider_args.config, provider_args.role, None, provider_args.region)
+                provider = create_minion_kwargs['provider']
+            else:
+                raise UserError('No provider specified')
+
         except (FileNotFoundError, KeyError):
             # Enable running help without having a valid provider config
             # FileNotFoundError if config is missing entirely, KeyError if the
@@ -91,16 +115,8 @@ class HartCLI:
                 sys.exit(0)
             raise
 
-        subparsers = parser.add_subparsers(dest='command',
-            title='Commands',
-            help='What do you want to do?')
-
-        create_minion_parser = self.add_create_minion_parser(subparsers)
-        create_master_parser = self.add_create_master_parser(subparsers)
-        destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
-        list_regions_parser = self.add_list_regions_parser(subparsers)
-        list_sizes_parser = self.add_list_sizes_parser(subparsers)
-
+        # Add the same arguments to create-minion-from-role as create-minion
+        provider.add_create_minion_arguments(create_minion_from_role_parser)
         provider.add_create_minion_arguments(create_minion_parser)
         provider.add_create_minion_arguments(create_master_parser)
         provider.add_destroy_minion_arguments(destroy_minion_parser)
@@ -119,6 +135,13 @@ class HartCLI:
             sys.exit(1)
 
         return args
+
+
+    def add_create_minion_from_role_parser(self, subparsers):
+        parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
+        parser.add_argument('role', help='Name of the role')
+        parser.set_defaults(action=self.cli_create_minion_from_role)
+        return parser
 
 
     def add_create_minion_parser(self, subparsers):
@@ -188,6 +211,13 @@ class HartCLI:
 
         parser.set_defaults(action=self.cli_list_sizes)
         return parser
+
+
+    def cli_create_minion_from_role(self, args):
+        kwargs = get_minion_arguments_for_role(args.config, args.role, args.provider, args.region)
+        for key, val in kwargs.items():
+            setattr(args, key, val)
+        self.cli_create_minion(args)
 
 
     def cli_create_minion(self, args):
