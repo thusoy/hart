@@ -41,11 +41,16 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
     if region is None:
         region = merged_config.pop('region')
 
+    size = merged_config.setdefault('size', provider.default_size)
+
     default_minion_config = {
         # Default to keep retrying a master connection if it fails
         'master_tries': -1,
         'grains': {
             'roles': [role],
+            'hart.region': region,
+            'hart.provider': provider.alias,
+            'hart.size': size,
         },
     }
 

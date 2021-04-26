@@ -11,6 +11,7 @@ from .libcloud import BaseLibcloudProvider
 
 class DOProvider(BaseLibcloudProvider):
     alias = 'do'
+    default_size = 's-1vcpu-1gb'
 
     def __init__(self, token, **kwargs):
         constructor = get_driver(Provider.DIGITAL_OCEAN)
@@ -30,8 +31,11 @@ class DOProvider(BaseLibcloudProvider):
             cloud_init,
             private_networking,
             tags,
-            size='s-1vcpu-1gb',
+            size=None,
             **kwargs):
+        if size is None:
+            size = default_size
+
         key_fingerprint = pubkey_to_fingerprint(auth_key.pubkey)
         size = self.get_size(size)
         image = self.get_image(debian_codename)

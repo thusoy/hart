@@ -39,6 +39,7 @@ region_pretty_names = {
 
 class GCEProvider(BaseLibcloudProvider):
     alias = 'gce'
+    default_size = 'n1-standard-1'
 
     def __init__(self, user_id, key, project, region=None, **kwargs):
         constructor = get_driver(Provider.GCE)
@@ -129,8 +130,11 @@ class GCEProvider(BaseLibcloudProvider):
             cloud_init,
             private_networking,
             tags,
-            size='n1-standard-1',
+            size=None,
             **kwargs):
+        if size is None:
+            size = default_size
+
         zone = kwargs.get('zone')
         if not zone:
             raise UserError('You must specify the GCE zone to launch in')

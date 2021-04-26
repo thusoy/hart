@@ -44,6 +44,9 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
                 'roles': [
                     'myrole',
                 ],
+                'hart.provider': 'ec2',
+                'hart.region': 'eu-central-1',
+                'hart.size': 't3.nano',
             },
         },
     }
@@ -82,6 +85,9 @@ def test_get_minion_arguments_region_inheritance(named_tempfile):
                 'roles': [
                     'myrole',
                 ],
+                'hart.provider': 'do',
+                'hart.region': 'sfo3',
+                'hart.size': 's-4vcpu-4gb',
             },
         },
     }
@@ -134,7 +140,7 @@ def test_get_minion_arguments_without_provider(named_tempfile):
         [roles.myrole]
         private_networking = true
         provider = "do"
-        size = "s-1vcpu-1gb"
+        size = "s-1vcpu-4gb"
         region = "sfo3"
 
         [providers.do]
@@ -147,14 +153,17 @@ def test_get_minion_arguments_without_provider(named_tempfile):
     assert arguments['minion_id'] == 'unique.sfo3.do.myrole'
     assert isinstance(arguments['provider'], DOProvider)
     assert arguments['region'] == 'sfo3'
-    assert arguments['size'] == 's-1vcpu-1gb'
+    assert arguments['size'] == 's-1vcpu-4gb'
     assert arguments['private_networking'] == True
     assert arguments['minion_config'] == {
         'master_tries': -1,
         'grains': {
             'roles': [
                 'myrole',
-            ]
+            ],
+            'hart.provider': 'do',
+            'hart.region': 'sfo3',
+            'hart.size': 's-1vcpu-4gb',
         },
     }
 
@@ -177,6 +186,9 @@ def test_get_minion_arguments_with_minion_config(named_tempfile):
             'roles': [
                 'myrole',
             ],
+            'hart.provider': 'do',
+            'hart.region': 'sfo3',
+            'hart.size': DOProvider.default_size,
         },
     }
 

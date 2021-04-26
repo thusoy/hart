@@ -54,6 +54,7 @@ region_to_location_map = {
 class EC2Provider(BaseProvider):
     username = 'admin'
     alias = 'ec2'
+    default_size = 't3.micro'
 
     def __init__(self, aws_access_key_id, aws_secret_access_key, region=None):
         self.aws_access_key_id = aws_access_key_id
@@ -120,8 +121,11 @@ class EC2Provider(BaseProvider):
             cloud_init,
             private_networking,
             tags,
-            size='t3.micro',
+            size=None,
             **kwargs):
+        if size is None:
+            size = default_size
+
         zone = kwargs.get('zone')
         if not zone:
             raise UserError('You must specify the ec2 availability zone')
