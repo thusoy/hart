@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Allow all create-minion arguments when creating role.
+
+
 0.14.1 - 2021-04-26
 -------------------
 
