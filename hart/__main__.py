@@ -115,6 +115,8 @@ class HartCLI:
                 sys.exit(0)
             raise
 
+        # Add the same arguments to create-minion-from-role as create-minion
+        provider.add_create_minion_arguments(create_minion_from_role_parser)
         provider.add_create_minion_arguments(create_minion_parser)
         provider.add_create_minion_arguments(create_master_parser)
         provider.add_destroy_minion_arguments(destroy_minion_parser)
