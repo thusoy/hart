@@ -7,17 +7,25 @@ from .exceptions import UserError
 
 DEFAULT_MINION_NAMING_SCHEME = '{unique_id}.{region}.{provider}.{role}'
 
+def get_provider_for_role(config_file, role, region):
+    config = load_config(config_file)
+    core_config = config.get('hart', {})
+    role_config = get_role_config(config, role)
+
+    merged_config = {}
+    merged_config.update(core_config)
+
+    if region is None:
+        region = merged_config.pop('region', None)
+
+    provider_alias = merged_config.pop('provider', role_config.pop('provider', None))
+    return build_provider_from_config(provider_alias, config, region=region)
+
+
 def get_minion_arguments_for_role(config_file, role, provider=None, region=None):
     config = load_config(config_file)
     core_config = config.get('hart', {})
-    role_config = config.get('roles', {}).get(role)
-    if role_config is None:
-        roles = config.get('roles', {})
-        if roles:
-            raise UserError('Unknown role %r, must be one of %s' % (
-                role, ', '.join(repr(r) for r in config.get('roles', {}))))
-        else:
-            raise UserError('Unknown role %r, no roles defined in config' % role)
+    role_config = get_role_config(config, role)
 
     merged_config = {}
     merged_config.update(core_config)
@@ -76,6 +84,18 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
         'minion_config': default_minion_config,
         **merged_config,
     }
+
+
+def get_role_config(config, role):
+    roles = config.get('roles', {})
+    role_config = roles.get(role)
+    if role_config is None:
+        if roles:
+            raise UserError('Unknown role %r, must be one of %s' % (
+                role, ', '.join(repr(r) for r in config.get('roles', {}))))
+        else:
+            raise UserError('Unknown role %r, no roles defined in config' % role)
+    return role_config
 
 
 def build_minion_id(naming_scheme, **kwargs):

@@ -7,7 +7,7 @@ import pytest
 
 from hart.exceptions import UserError
 from hart.providers import DOProvider, EC2Provider
-from hart.roles import get_minion_arguments_for_role, build_minion_id
+from hart.roles import get_minion_arguments_for_role, get_provider_for_role, build_minion_id
 
 
 def test_get_minion_arguments_provider_inheritance(named_tempfile):
@@ -220,3 +220,19 @@ def test_use_provider_extension_in_minion_id(named_tempfile):
     arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole', provider=provider)
 
     assert arguments['minion_id'] == 'eu-south-1a.myrole'
+
+
+def test_get_provider_from_role(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [providers.ec2]
+        aws_access_key_id = "foo"
+        aws_secret_access_key = "bar"
+
+        [roles.myrole]
+        provider = "ec2"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    provider = get_provider_for_role(named_tempfile.name, 'myrole', None)
+
+    assert isinstance(provider, EC2Provider)

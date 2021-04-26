@@ -11,7 +11,7 @@ from .minions import (
 )
 from .master import create_master
 from .providers import provider_map
-from .roles import get_minion_arguments_for_role
+from .roles import get_minion_arguments_for_role, get_provider_for_role
 from .version import __version__
 
 class TerminalColors:
@@ -96,9 +96,8 @@ class HartCLI:
                 provider = get_provider(provider_args.provider, provider_args.config,
                     provider_args.region)
             elif provider_args.command == 'create-minion-from-role':
-                create_minion_kwargs = get_minion_arguments_for_role(
-                    provider_args.config, provider_args.role, None, provider_args.region)
-                provider = create_minion_kwargs['provider']
+                provider = get_provider_for_role(
+                    provider_args.config, provider_args.role, provider_args.region)
             else:
                 raise UserError('No provider specified')
 
