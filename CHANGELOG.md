@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Fix parser crash introduced in 0.14.2.
+
+
 0.14.2 - 2021-04-26
 -------------------
 

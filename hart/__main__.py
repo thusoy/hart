@@ -139,21 +139,23 @@ class HartCLI:
     def add_create_minion_from_role_parser(self, subparsers):
         parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
         parser.add_argument('role', help='Name of the role')
-        self._add_minion_master_shared_arguments(parser)
+        self._add_minion_master_role_shared_arguments(parser)
         parser.set_defaults(action=self.cli_create_minion_from_role)
         return parser
 
 
     def add_create_minion_parser(self, subparsers):
         parser = subparsers.add_parser('create-minion', help='Create a new minion')
-        self._add_minion_master_shared_arguments(parser)
+        parser.add_argument('minion_id')
+        self._add_minion_master_role_shared_arguments(parser)
         parser.set_defaults(action=self.cli_create_minion)
         return parser
 
 
     def add_create_master_parser(self, subparsers):
         parser = subparsers.add_parser('create-master', help='Create a new saltmaster')
-        self._add_minion_master_shared_arguments(parser)
+        parser.add_argument('minion_id')
+        self._add_minion_master_role_shared_arguments(parser)
 
         parser.add_argument('-a', '--authorize-key',
             help='An ssh public key to add to .ssh/authorized_keys.')
@@ -164,11 +166,10 @@ class HartCLI:
         return parser
 
 
-    def _add_minion_master_shared_arguments(self, parser): # pylint disable=no-self-use
+    def _add_minion_master_role_shared_arguments(self, parser): # pylint disable=no-self-use
         def type_csv(clistring):
             return clistring.split(',')
 
-        parser.add_argument('minion_id')
         parser.add_argument('-s', '--size',
             help='The size of the node to create. Default varies with provider.')
         parser.add_argument('-t', '--tags', type=type_csv, default=[],
