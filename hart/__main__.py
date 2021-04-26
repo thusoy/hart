@@ -72,13 +72,36 @@ class HartCLI:
         parser.add_argument('-h', '--help', action='store_true', help='Print help')
         parser.add_argument('-v', '--version', action='version', version='hart v%s' % __version__)
 
+        subparsers = parser.add_subparsers(dest='command',
+            title='Commands',
+            help='What do you want to do?')
+
+        create_minion_from_role_parser = self.add_create_minion_from_role_parser(subparsers)
+        create_minion_parser = self.add_create_minion_parser(subparsers)
+        create_master_parser = self.add_create_master_parser(subparsers)
+        destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
+        list_regions_parser = self.add_list_regions_parser(subparsers)
+        list_sizes_parser = self.add_list_sizes_parser(subparsers)
+
         # Do an initial parse of just the provider arguments, to be able to add
-        # provider-specific arguments to the full parse
+        # provider-specific arguments to the full parse. If a provider is given
+        # on the command line that takes precedence, otherwise when creating
+        # from a role there might be a provider specified in the config file,
+        # use that.
         provider_args, _ = parser.parse_known_args(argv)
+        provider = None
 
         try:
-            provider = get_provider(provider_args.provider, provider_args.config,
-                provider_args.region)
+            if provider_args.provider:
+                provider = get_provider(provider_args.provider, provider_args.config,
+                    provider_args.region)
+            elif provider_args.command == 'create-minion-from-role':
+                create_minion_kwargs = get_minion_arguments_for_role(
+                    provider_args.config, provider_args.role, None, provider_args.region)
+                provider = create_minion_kwargs['provider']
+            else:
+                raise UserError('No provider specified')
+
         except (FileNotFoundError, KeyError):
             # Enable running help without having a valid provider config
             # FileNotFoundError if config is missing entirely, KeyError if the
@@ -91,17 +114,6 @@ class HartCLI:
                 parser.print_help()
                 sys.exit(0)
             raise
-
-        subparsers = parser.add_subparsers(dest='command',
-            title='Commands',
-            help='What do you want to do?')
-
-        self.add_create_minion_from_role_parser(subparsers)
-        create_minion_parser = self.add_create_minion_parser(subparsers)
-        create_master_parser = self.add_create_master_parser(subparsers)
-        destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
-        list_regions_parser = self.add_list_regions_parser(subparsers)
-        list_sizes_parser = self.add_list_sizes_parser(subparsers)
 
         provider.add_create_minion_arguments(create_minion_parser)
         provider.add_create_minion_arguments(create_master_parser)

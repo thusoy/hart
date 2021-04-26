@@ -25,8 +25,8 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
     if region is None:
         region = merged_config.pop('region', None)
 
+    provider_alias = merged_config.pop('provider', role_config.pop('provider', None))
     if provider is None:
-        provider_alias = merged_config.pop('provider', role_config.pop('provider', None))
         provider = build_provider_from_config(provider_alias, config, region=region)
 
     provider_config = role_config.pop(provider.alias, {})
