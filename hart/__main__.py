@@ -62,8 +62,8 @@ class HartCLI:
     def get_args(self, argv):
         parser = argparse.ArgumentParser(prog='hart', add_help=False)
 
-        parser.add_argument('-P', '--provider', choices=provider_map.keys(), default='do',
-            help='Which VPS provider to use. Default: %(default)s')
+        parser.add_argument('-P', '--provider', choices=provider_map.keys(),
+            help='Which VPS provider to use.')
         parser.add_argument('-R', '--region',
             help='Which region to create the node in. Default: %(default)s')
         parser.add_argument('-c', '--config', default='/etc/hart.toml',

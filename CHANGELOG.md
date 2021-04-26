@@ -14,6 +14,9 @@ UNRELEASED -
   a named group of parameters to create a minion, and is usually what you'd use
   in the salt topfile to allocate states to a minion.
 
+## Changed
+- Digital Ocean is no longer used as the default provider if none is specified.
+
 
 0.13.1 - 2021-02-17
 -------------------
