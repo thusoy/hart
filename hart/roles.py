@@ -62,16 +62,6 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
     if minion_config:
         merge_dicts(default_minion_config, minion_config)
 
-    kwargs = merged_config
-
-    salt_branch = merged_config.get('salt_branch')
-    if salt_branch:
-        kwargs['salt_branch'] = salt_branch
-
-    size = merged_config.get('size')
-    if size:
-        kwargs['size'] = size
-
     naming_scheme = merged_config.pop('role_naming_scheme', DEFAULT_MINION_NAMING_SCHEME)
 
     return {
@@ -84,7 +74,7 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None)
         'provider': provider,
         'region': region,
         'minion_config': default_minion_config,
-        **kwargs,
+        **merged_config,
     }
 
 
