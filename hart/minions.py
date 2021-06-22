@@ -197,7 +197,7 @@ def verify_minion_connection(client, minion_id, username):
     prefix = 'sudo ' if username != 'root' else ''
     ssh_run_command(client,
         '{0}salt-call test.ping && {0}service salt-minion restart'.format(prefix),
-        timeout=30)
+        timeout=120)
 
     # Give the minion some time to start before attempting another ping
     time.sleep(5)
