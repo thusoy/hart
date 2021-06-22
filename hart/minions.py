@@ -199,11 +199,27 @@ def verify_minion_connection(client, minion_id, username):
         '{0}salt-call test.ping && {0}service salt-minion restart'.format(prefix),
         timeout=120)
 
-    # Give the minion some time to start before attempting another ping
-    time.sleep(5)
-
-    # Also test that the master can reach the minion
-    subprocess.check_call(['salt', minion_id, 'test.ping'])
+    # Also test that the master can reach the minion, but the minion might take a moment
+    # to start so try a couple times
+    for i in range(5):
+        try:
+            subprocess.run(['salt', minion_id, 'test.ping'],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as e:
+            if e.returncode == 1 and b'[Not connected]' in e.stdout:
+                print('Failed connectivity check %d, trying again...' % (i + 1))
+                time.sleep(2**i)
+                continue
+            print(e.stdout.decode('utf-8'))
+            log_error(e.stderr.decode('utf-8'))
+            raise
+        else:
+            print('Pinged %s successfully' % minion_id)
+            break
+    else:
+        raise ConnectionError('Unable to ping new instance')
 
     authorized_keys_path = '/root/.ssh/authorized_keys'
     if username != 'root':
