@@ -44,16 +44,13 @@ def build_ssh_key_name(minion_id):
 
 
 def remove_argument_from_parser(parser, arg):
-    '''Remove a an argument from the given parser.
-
-    Not used directly by hart but exposed to let subclasses of the CLI remove arguments
-    that might not be relevant for them.
-    '''
+    '''Remove an argument from the given parser.'''
     for action in parser._actions:
-        if action.option_strings and action.option_strings[-1] == arg:
+        if action.option_strings and arg in action.option_strings:
             parser._remove_action(action)
 
-    del parser._option_string_actions[arg]
+            for option_string in action.option_strings:
+                del parser._option_string_actions[option_string]
 
 
 def log_warning(message, end='\n'):

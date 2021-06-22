@@ -11,6 +11,9 @@ def test_remove_argument_from_parser_single_flag():
 
     assert '--foo' not in parser.format_usage()
 
+    # This shouldn't crash
+    parser.add_argument('--foo', help='Something')
+
 
 def test_remove_argument_from_parser_multiple_flags():
     parser = argparse.ArgumentParser()
@@ -21,3 +24,6 @@ def test_remove_argument_from_parser_multiple_flags():
 
     assert '-f' not in parser.format_usage()
     assert '--foo' not in parser.format_usage()
+
+    # This shouldn't crash
+    parser.add_argument('-f', '--foo', help='Something')

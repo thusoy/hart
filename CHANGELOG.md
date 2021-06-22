@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Bug in `hart.utils.remove_argument_from_parser` if argument had multiple option strings.
+
+
 0.14.5 - 2021-06-22
 -------------------
 
