@@ -66,7 +66,8 @@ class HartCLI:
 
 
     def get_args(self, argv):
-        parser = argparse.ArgumentParser(prog='hart', add_help=False)
+        # Define a conflict handler to let subclasses override defaults
+        parser = argparse.ArgumentParser(prog='hart', add_help=False, conflict_handler='resolve')
 
         parser.add_argument('-P', '--provider', choices=provider_map.keys(),
             help='Which VPS provider to use.')

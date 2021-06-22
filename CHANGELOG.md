@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Changed
+- The CLI ArgumentParser now defines `conflict_handler=resolve` to let subclasses override
+  defaults without having to first remove the existing argument.
+
+
 0.14.4 - 2021-04-26
 -------------------
 
