@@ -16,6 +16,9 @@ UNRELEASED -
 - `hart.utils.remove_argument_from_parser` to help CLI subclasses remove arguments that
   are not relevant for them.
 
+## Fixed
+- Retry initial pings and increase timeouts to reduce error rate when creating minions.
+
 
 0.14.4 - 2021-04-26
 -------------------
