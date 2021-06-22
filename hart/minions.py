@@ -12,6 +12,7 @@ import yaml
 from . import utils
 from .constants import DEBIAN_VERSIONS
 from .ssh import get_verified_ssh_client, ssh_run_command
+from .utils import log_error
 
 
 def create_minion(
@@ -43,7 +44,7 @@ def create_minion(
     try:
         connect_minion(hart_node)
     except:
-        sys.stderr.write('Destroying node since it failed to connect\n')
+        log_error('Destroying node since it failed to connect')
         hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
         disconnect_minion(minion_id)
         raise
@@ -123,7 +124,7 @@ def create_node(
         except:
             traceback.print_exc()
             if node:
-                sys.stderr.write('Destroying node since it failed initialization\n')
+                log_error('Destroying node since it failed initialization')
                 provider.destroy_node(node, extra)
             raise
 

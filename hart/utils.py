@@ -1,6 +1,7 @@
 import base64
 import datetime
 import os
+import sys
 from collections import namedtuple
 
 import jinja2
@@ -10,6 +11,11 @@ from .exceptions import UserError
 
 
 HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary node_extra')
+
+class TerminalColors:
+    WARNING = '\033[33m'
+    FAIL = '\033[91m'
+    RESET = '\033[0m'
 
 
 def create_token():
@@ -48,3 +54,24 @@ def remove_argument_from_parser(parser, arg):
             parser._remove_action(action)
 
     del parser._option_string_actions[arg]
+
+
+def log_warning(message, end='\n'):
+    log_to_stderr_with_color(message, TerminalColors.WARNING, end)
+
+
+def log_error(message, end='\n'):
+    log_to_stderr_with_color(message, TerminalColors.FAIL, end)
+
+
+def log_to_stderr_with_color(message, color, end):
+    out = sys.stderr
+    if out.isatty():
+        out.write(color)
+        out.write(message)
+        out.write(TerminalColors.RESET)
+    else:
+        out.write(message)
+    if end:
+        out.write(end)
+    out.flush()

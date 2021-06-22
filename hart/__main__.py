@@ -12,12 +12,8 @@ from .minions import (
 from .master import create_master
 from .providers import provider_map
 from .roles import get_minion_arguments_for_role, get_provider_for_role
+from .utils import log_error, log_warning
 from .version import __version__
-
-class TerminalColors:
-    WARNING = '\033[33m'
-    FAIL = '\033[91m'
-    RESET = '\033[0m'
 
 
 def main(argv=None):
@@ -28,27 +24,6 @@ def main(argv=None):
     except UserError as error:
         log_error(str(error))
         sys.exit(1)
-
-
-def log_warning(message, end='\n'):
-    log_to_stderr_with_color(message, TerminalColors.WARNING, end)
-
-
-def log_error(message, end='\n'):
-    log_to_stderr_with_color(message, TerminalColors.FAIL, end)
-
-
-def log_to_stderr_with_color(message, color, end):
-    out = sys.stderr
-    if out.isatty():
-        out.write(color)
-        out.write(message)
-        out.write(TerminalColors.RESET)
-    else:
-        out.write(message)
-    if end:
-        out.write(end)
-    out.flush()
 
 
 class DefaultArgumentString(str):

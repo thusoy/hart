@@ -9,6 +9,8 @@ import socket
 import paramiko
 from paramiko.ssh_exception import SSHException
 
+from .utils import log_error
+
 
 class IgnorePolicy(paramiko.MissingHostKeyPolicy):
     def missing_host_key(self, client, hostname, key):
@@ -21,9 +23,6 @@ class IgnorePolicy(paramiko.MissingHostKeyPolicy):
 
 
 def ssh_run_command(client, command, timeout=3, log_stdout=True):
-    # Work around circular import
-    from .__main__ import log_error
-
     captured_stdout = []
     session = client.get_transport().open_session()
     session.exec_command(command)
