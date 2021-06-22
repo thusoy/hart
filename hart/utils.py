@@ -35,3 +35,16 @@ def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
 def build_ssh_key_name(minion_id):
     current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
     return 'hart-temp-for-%s-at-%s' % (minion_id, current_date)
+
+
+def remove_argument_from_parser(parser, arg):
+    '''Remove a an argument from the given parser.
+
+    Not used directly by hart but exposed to let subclasses remove arguments that
+    might not be relevant for them.
+    '''
+    for action in parser._actions:
+        if action.option_strings and action.option_strings[-1] == arg:
+            parser._remove_action(action)
+
+    del parser._option_string_actions[arg]

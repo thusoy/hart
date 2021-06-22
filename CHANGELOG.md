@@ -12,6 +12,10 @@ UNRELEASED -
 - The CLI ArgumentParser now defines `conflict_handler=resolve` to let subclasses override
   defaults without having to first remove the existing argument.
 
+## Added
+- `hart.utils.remove_argument_from_parser` to help CLI subclasses remove arguments that
+  are not relevant for them.
+
 
 0.14.4 - 2021-04-26
 -------------------
