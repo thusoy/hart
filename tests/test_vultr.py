@@ -29,25 +29,25 @@ def test_get_device_from_interfaces():
 def test_add_private_ip_to_device():
     with mock.patch('hart.providers.vultr.subprocess') as mock_subprocess:
         vultr.add_ip_to_device('minion', 'private', 'ens7', '10.0.0.1', '255.255.240.0')
-    mock_subprocess.check_call.assert_called_with([
+    mock_subprocess.run.assert_called_with([
         'salt',
         'minion',
         'file.write',
         '/etc/network/interfaces.d/20-hart-private-ip',
         "args=['auto ens7', 'iface ens7 inet static', 'address 10.0.0.1', 'netmask 255.255.240.0', 'mtu 1450']",
-    ])
+    ], check=True)
 
 
 def test_add_reserved_ip_to_device():
     with mock.patch('hart.providers.vultr.subprocess') as mock_subprocess:
         vultr.add_ip_to_device('minion', 'reserved', 'ens3:0', '1.2.3.4', '255.255.255.0')
-    mock_subprocess.check_call.assert_called_with([
+    mock_subprocess.run.assert_called_with([
         'salt',
         'minion',
         'file.write',
         '/etc/network/interfaces.d/20-hart-reserved-ip',
         "args=['auto ens3:0', 'iface ens3:0 inet static', 'address 1.2.3.4', 'netmask 255.255.255.0']",
-    ])
+    ], check=True)
 
 
 def test_get_device_from_missing_interface():

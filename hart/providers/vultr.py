@@ -278,7 +278,7 @@ def get_device_and_next_label_from_interfaces(interfaces, current_device_ip):
 
 
 def enable_network_interfaces_d(minion_id):
-    subprocess.check_call([
+    subprocess.run([
         'salt',
         minion_id,
         'file.replace',
@@ -286,7 +286,7 @@ def enable_network_interfaces_d(minion_id):
         '^#source /etc/network/interfaces.d/\\*$',
         'source /etc/network/interfaces.d/*',
         'append_if_not_found=True',
-    ])
+    ], check=True)
 
 
 def add_ip_to_device(minion_id, ip_kind, label, ip, netmask):
@@ -303,19 +303,19 @@ def add_ip_to_device(minion_id, ip_kind, label, ip, netmask):
     if mtu:
         lines.append('mtu %d' % mtu)
 
-    subprocess.check_call([
+    subprocess.run([
         'salt',
         minion_id,
         'file.write',
         '/etc/network/interfaces.d/20-hart-%s-ip' % ip_kind,
         'args=[%s]' % ', '.join("'%s'" % line for line in lines),
-    ])
+    ], check=True)
 
 
 def bring_up_interface_with_label(minion_id, label):
-    subprocess.check_call([
+    subprocess.run([
         'salt',
         minion_id,
         'cmd.run',
         'ifup %s' % label,
-    ])
+    ], check=True)

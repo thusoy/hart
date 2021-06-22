@@ -138,11 +138,11 @@ def destroy_minion(minion_id, provider, **kwargs):
 
 def disconnect_minion(minion_id):
     print('Deleting the salt minion %s' % minion_id)
-    subprocess.check_call([
+    subprocess.run([
         'salt-key',
         '--delete=%s' % minion_id,
         '--yes',
-    ])
+    ], check=True)
 
 
 def destroy_node(hart_node):
