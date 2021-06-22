@@ -12,6 +12,7 @@ from libcloud.compute.base import Node
 from .base import BaseProvider, NodeSize, Region
 from ..constants import DEBIAN_VERSIONS
 from ..exceptions import UserError
+from ..utils import remove_argument_from_parser
 
 
 # The pricing API is a supreme clusterfuck that requires lots of special care.
@@ -84,6 +85,20 @@ class EC2Provider(BaseProvider):
 
 
     def add_create_minion_arguments(self, parser):
+        def split_csv_keyval(clistring):
+            ret = {}
+            for key_value_pair in clistring.split(','):
+                if not '=' in key_value_pair:
+                    raise UserError('EC2 requires tags to be key=value pairs')
+
+                key, value = key_value_pair.split('=', 1)
+                ret[key] = value
+            return ret
+
+        remove_argument_from_parser(parser, '--tags')
+        parser.add_argument('-t', '--tags', type=split_csv_keyval, default={},
+            help='Tags to add to the new node, comma-separated list of key=value pairs.')
+
         parser.add_argument('-z', '--zone', help='AWS availability zone')
         parser.add_argument('--subnet',
             help='AWS: The subnet to launch the node in')
@@ -182,14 +197,12 @@ class EC2Provider(BaseProvider):
             })
 
         tag_specifications = [{'Key': 'Name', 'Value': minion_id}]
-        for tag in tags:
-            if not '=' in tag:
-                raise UserError('EC2 requires tags to be key=val (was %r)' % tag)
-            key, val = tag.split('=', 1)
+        for key, val in tags.items():
             tag_specifications.append({
                 'Key': key,
                 'Value': val,
             })
+
         create_response = self.ec2.run_instances(
             ImageId=image['ImageId'],
             InstanceType=size,
