@@ -208,7 +208,7 @@ def verify_minion_connection(client, minion_id, username):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
-            if e.returncode == 1 and b'[Not connected]' in e.stdout:
+            if e.returncode == 1 and (b'[Not connected]' in e.stdout or b'[No response]' in e.stdout):
                 print('Failed connectivity check %d, trying again...' % (i + 1))
                 time.sleep(2**i)
                 continue

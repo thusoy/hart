@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Handle more possible error cases for retry in initial connectivity check.
+
+
 0.14.6 - 2021-06-22
 -------------------
 
