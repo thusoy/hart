@@ -14,6 +14,9 @@ UNRELEASED -
   `hart-com-example-role-xxx`). This is also consistent with how google does it for managed
   instances.
 
+## Fixed
+- The `PermitRootLogin no` fix was also added to creating salt masters.
+
 
 0.14.8 - 2021-08-15
 -------------------
