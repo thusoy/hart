@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Changed
+- The default naming pattern of GCE instances has been changed to be easier to browse in the
+  console, by inverting the dns label ordering (ie `hart-xxx-role-example-com` becomes
+  `hart-com-example-role-xxx`). This is also consistent with how google does it for managed
+  instances.
+
+
 0.14.8 - 2021-08-15
 -------------------
 

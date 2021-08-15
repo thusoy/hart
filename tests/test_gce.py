@@ -43,3 +43,8 @@ def test_get_selected_or_default_subnet_none_matching():
     second.name = 'second'
     with pytest.raises(UserError):
         gce.get_selected_or_default_subnet([first, second], 'third')
+
+
+def test_instance_name_generation():
+    minion_id = '01.db.example.com'
+    assert gce.name_from_minion_id(minion_id) == 'hart-com-example-db-01-b64faa'
