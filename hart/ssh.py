@@ -68,7 +68,7 @@ def ssh_run_command(client, command, timeout=3, log_stdout=True):
 
 @contextlib.contextmanager
 def get_verified_ssh_client(ip, ssh_key, canary, username='root'):
-    client = connect_to_droplet(ip, ssh_key, username)
+    client = connect_to_node(ip, ssh_key, username)
     print('Connected')
 
     # We might not be connected to the right box yet, but we should help seed
@@ -95,7 +95,7 @@ def log_action(action, start_time):
     print('action=%s time=%.2fs' % (action, time.time() - start_time))
 
 
-def connect_to_droplet(ip, client_ssh_key, username):
+def connect_to_node(ip, client_ssh_key, username):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(IgnorePolicy())
     timeout = 120
