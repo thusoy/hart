@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Connection to nodes that include `PermitRootLogin no` in the default sshd config (notably GCE).
+
+
 0.14.7 - 2021-06-23
 -------------------
 

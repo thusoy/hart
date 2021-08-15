@@ -8,6 +8,15 @@ echo '{{ random_seed }}' > /dev/random
 # verify quickly
 echo '{{ ssh_canary }}' > /tmp/ssh-canary
 
+{% if permit_root_ssh %}
+# Some providers (hey google) default to 'PermitRootLogin no' in the ssh config,
+# preventing us from being able to connect. Fix this.
+grep -qE '^PermitRootLogin no' /etc/ssh/sshd_config && (
+    sed -i 's/^PermitRootLogin no/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+    service ssh reload
+) || :
+{% endif %}
+
 # Start conntrack to ensure connections started during init are let through the
 # firewall when it is activated later
 iptables -A INPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT

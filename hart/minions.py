@@ -95,6 +95,7 @@ def create_node(
         'master_pubkey': master_pubkey,
         'saltstack_repo': saltstack_repo,
         'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
+        'permit_root_ssh': provider.username == 'root',
     })
 
     key_name = utils.build_ssh_key_name(minion_id)
