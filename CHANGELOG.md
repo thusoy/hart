@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Provide better error message if giving an invalid or unknown GCE zone.
+
 
 0.14.9 - 2021-09-08
 -------------------

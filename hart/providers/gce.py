@@ -140,13 +140,15 @@ class GCEProvider(BaseLibcloudProvider):
         if size is None:
             size = self.default_size
 
-        zone = kwargs.get('zone')
-        if not zone:
+        desired_zone = kwargs.get('zone')
+        if not desired_zone:
             raise UserError('You must specify the GCE zone to launch in')
 
-        subnet_string = kwargs.get('subnet')
+        zone = self.driver.ex_get_zone(desired_zone)
+        if not zone:
+            raise UserError('Unknown zone %r' % desired_zone)
 
-        zone = self.driver.ex_get_zone(zone)
+        subnet_string = kwargs.get('subnet')
         image = self.driver.ex_get_image('debian-%d' % DEBIAN_VERSIONS[debian_codename])
         volume_type = kwargs.get('volume_type')
         disk_type = self.driver.ex_get_disktype(volume_type, zone=zone)
