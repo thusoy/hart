@@ -9,6 +9,7 @@ from libcloud.utils.py3 import httplib
 
 from .base import NodeSize
 from .libcloud import BaseLibcloudProvider
+from ..constants import DEBIAN_VERSIONS
 from ..exceptions import UserError
 
 
@@ -45,6 +46,7 @@ class VultrProvider(BaseLibcloudProvider):
         node_extra = {
             'script_id': script_id,
             'private_networking': private_networking,
+            'debian_codename': debian_codename,
         }
         tag = None
         if len(tags) > 1:
@@ -160,6 +162,12 @@ class VultrProvider(BaseLibcloudProvider):
         # If we delete the startup script any earlier it might not get onto the node and
         # boot might fail
         self.delete_startup_script(node_extra)
+
+        if DEBIAN_VERSIONS[node_extra['debian_codename']] >= 11:
+            # For bullseye and newer the base image uses the standard cloud init boot log
+            # location and we don't need the custom logic here
+            super().wait_for_init_script(client, node_extra)
+            return
 
         # Creds to https://stackoverflow.com/a/14158100 for a way to get the pid
         _, stdout, stderr = client.exec_command('echo $$ && exec tail -f /var/log/firstboot.log')
