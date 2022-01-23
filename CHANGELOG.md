@@ -9,6 +9,7 @@ UNRELEASED -
 
 ## Fixed
 - Provide better error message if giving an invalid or unknown GCE zone.
+- Fix Vultr node creation failing due to moved boot log.
 
 ## Added
 - Support for Debian Bullseye and make it the default version.

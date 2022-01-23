@@ -162,7 +162,7 @@ class VultrProvider(BaseLibcloudProvider):
         self.delete_startup_script(node_extra)
 
         # Creds to https://stackoverflow.com/a/14158100 for a way to get the pid
-        _, stdout, stderr = client.exec_command('echo $$ && exec tail -f /tmp/firstboot.log')
+        _, stdout, stderr = client.exec_command('echo $$ && exec tail -f /var/log/firstboot.log')
         tail_pid = int(stdout.readline())
         for line in stdout:
             print(line, end='')
