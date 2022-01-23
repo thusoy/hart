@@ -122,7 +122,7 @@ def seed_client_random_pool(client):
 
 
 def wait_for_verified_ssh_canary(client, ssh_canary, should_sudo):
-    timeout = 15
+    timeout = 60
     start_time = time.time()
     while time.time() - start_time < timeout:
         # The remove is just a matter of cleanup, the canary isn't sensitive
