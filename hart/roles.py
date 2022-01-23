@@ -78,18 +78,20 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None,
 
     naming_scheme = merged_config.pop('role_naming_scheme', DEFAULT_MINION_NAMING_SCHEME)
 
-    return {
-        'minion_id': build_minion_id(naming_scheme,
-            role=role,
-            region=region,
-            provider=provider.alias,
-            **merged_config,
-        ),
-        'provider': provider,
-        'region': region,
-        'minion_config': default_minion_config,
+    # Prevent duplicate provider error, added back again soon
+    merged_config.pop('provider', None)
+
+    merged_config['minion_id'] = build_minion_id(naming_scheme,
+        role=role,
+        region=region,
+        provider=provider.alias,
         **merged_config,
-    }
+    )
+    merged_config['provider'] = provider
+    merged_config['region'] = region
+    merged_config['minion_config'] = default_minion_config
+
+    return merged_config
 
 
 def get_role_config(config, role):
