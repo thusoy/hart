@@ -14,7 +14,7 @@ def create_master(
         region=None,
         size=None,
         salt_branch='latest',
-        debian_codename='buster',
+        debian_codename='bullseye',
         tags=None,
         private_networking=False,
         minion_config=None,

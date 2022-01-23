@@ -10,6 +10,9 @@ UNRELEASED -
 ## Fixed
 - Provide better error message if giving an invalid or unknown GCE zone.
 
+## Added
+- Support for Debian Bullseye and make it the default version.
+
 
 0.14.9 - 2021-09-08
 -------------------
