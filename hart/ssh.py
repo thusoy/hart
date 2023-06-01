@@ -14,12 +14,15 @@ from .utils import log_error
 
 class IgnorePolicy(paramiko.MissingHostKeyPolicy):
     def missing_host_key(self, client, hostname, key):
-        # key.__str__() isn't valid according to str() since it returns bytes, thus
-        # calling it directly
-        key_digest = hashlib.sha256(key.__str__()).digest()
-        fingerprint = 'SHA256:%s' % base64.b64encode(key_digest).decode('utf-8')
-        print('Accepting host key type %s with fingerprint %s' % (
-            key.get_name(), fingerprint))
+        # In paramiko prior to 3.0.0 key.__str__() returned bytes and there was no __bytes__
+        key_digest = hashlib.sha256(
+            key.__bytes__() if hasattr(key, "__bytes__") else key.__str__()
+        ).digest()
+        fingerprint = "SHA256:%s" % base64.b64encode(key_digest).decode("utf-8")
+        print(
+            "Accepting host key type %s with fingerprint %s"
+            % (key.get_name(), fingerprint)
+        )
 
 
 def ssh_run_command(client, command, timeout=3, log_stdout=True):

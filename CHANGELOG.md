@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED
+-------------------
+
+## Fixed
+- Compatibility with Paramiko >= 3.0.0.
+
+
 0.15.0 - 2022-04-05
 -------------------
 
