@@ -10,6 +10,9 @@ UNRELEASED
 ## Fixed
 - Compatibility with Paramiko >= 3.0.0.
 
+## Added
+- Support for Debian Bookworm and make it the default version.
+
 
 0.15.0 - 2022-04-05
 -------------------

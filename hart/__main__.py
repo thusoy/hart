@@ -162,7 +162,7 @@ class HartCLI:
         parser.add_argument('-p', '--private-networking', action='store_true',
             help='Whether to enable private networking on the node')
         parser.add_argument('-d', '--debian-codename',
-            choices=DEBIAN_VERSIONS.keys(), default=DefaultArgumentString('bullseye'),
+            choices=DEBIAN_VERSIONS.keys(), default=DefaultArgumentString('bookworm'),
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')
