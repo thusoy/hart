@@ -116,7 +116,7 @@ apply_security_updates () {
     find /etc/apt/sources.list.d -type f -name '*.sources' -print | while read file; do
         csplit \
             --elide-empty-files \
-            --prefix "$apt_security_parts/$file" \
+            --prefix "$apt_security_parts/$(basename $file)" \
             --quiet \
             --suppress-match \
             --suffix-format "%02d.sources" \
