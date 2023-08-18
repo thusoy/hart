@@ -307,17 +307,13 @@ class EC2Provider(BaseProvider):
 
 
     def get_image(self, debian_codename):
-        # The release process for the official debian images changed a bit from
-        # buster and onwards. The owner account changed, and the images changed
-        # from being named debian-<codename>.. to debian-<version>..
         debian_version = DEBIAN_VERSIONS[debian_codename]
-        is_buster_or_newer = debian_version >= 10
-        official_debian_account = '136693071363' if is_buster_or_newer else '379101102735'
+        official_debian_account = '136693071363'
         image_response = self.ec2.describe_images(Owners=[official_debian_account], Filters=[{
             'Name': 'architecture',
             'Values': ['x86_64'],
         }])
-        image_prefix = 'debian-%s' % (debian_version if is_buster_or_newer else debian_codename)
+        image_prefix = 'debian-%s' % debian_version
         dist_images = [i for i in image_response['Images'] if i['Name'].startswith(image_prefix)]
         dist_images.sort(key=lambda i: i['Name'])
         return dist_images[-1]

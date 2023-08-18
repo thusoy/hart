@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Changed
+- Removed support for classic packages of salt, now only supporting the new onedir
+  packages. This effectively also limits salt branches to 3005 and 3006, and Debian
+  versions to buster and newer.
+
+
 0.15.1 - 2023-08-16
 -------------------
 

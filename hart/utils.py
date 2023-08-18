@@ -28,14 +28,10 @@ def get_cloud_init_template(template_name='minion.sh'):
     return environment.get_template(template_name)
 
 
-def get_saltstack_repo_url(debian_codename, salt_branch, use_py2):
+def get_saltstack_repo_url(debian_codename, salt_branch):
     debian_version = DEBIAN_VERSIONS[debian_codename]
-    if use_py2 and debian_version > 9:
-        raise UserError('saltstack py2 is only available for debian stretch and older')
-    if not use_py2 and debian_version < 9:
-        raise UserError('saltstack py3 is only available for debian stretch and newer')
-    return 'https://repo.saltstack.com/%s/debian/%s/amd64/%s %s main' % (
-        'apt' if use_py2 else 'py3', debian_version, salt_branch, debian_codename)
+    return 'https://repo.saltproject.io/salt/py3/debian/%s/amd64/%s %s main' % (
+        debian_version, salt_branch, debian_codename)
 
 
 def build_ssh_key_name(minion_id):

@@ -21,11 +21,10 @@ def create_minion(
         region=None,
         size=None,
         salt_branch='latest',
-        debian_codename='stretch',
+        debian_codename='bullseye',
         tags=None,
         private_networking=False,
         minion_config=None,
-        use_py2=False,
         **kwargs
         ):
     hart_node = create_node(
@@ -38,7 +37,6 @@ def create_minion(
         tags,
         private_networking,
         minion_config,
-        use_py2,
         **kwargs
     )
     try:
@@ -71,11 +69,10 @@ def create_node(
         region=None,
         size=None,
         salt_branch='latest',
-        debian_codename='stretch',
+        debian_codename='bullseye',
         tags=None,
         private_networking=False,
         minion_config=None,
-        use_py2=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -87,7 +84,7 @@ def create_node(
     if minion_config is not None:
         default_minion_config.update(minion_config)
 
-    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
+    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch)
     cloud_init = cloud_init_template.render(**{
         'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),

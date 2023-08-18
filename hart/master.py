@@ -19,7 +19,6 @@ def create_master(
         private_networking=False,
         minion_config=None,
         grains=None,
-        use_py2=False,
         script=None,
         authorize_key=None,
         **kwargs
@@ -35,7 +34,6 @@ def create_master(
         private_networking,
         minion_config,
         grains,
-        use_py2,
         **kwargs
     )
     try:
@@ -57,7 +55,6 @@ def create_master_node(
         private_networking=False,
         minion_config=None,
         grains=None,
-        use_py2=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -71,7 +68,7 @@ def create_master_node(
     if minion_config is not None:
         default_minion_config.update(minion_config)
 
-    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch, use_py2)
+    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch)
     cloud_init = cloud_init_template.render(**{
         'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),
