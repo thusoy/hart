@@ -99,13 +99,42 @@ EOF
 echo 'deb [signed-by=/usr/share/keyrings/salt-archive-keyring-2023.gpg] {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
 
 apply_security_updates () {
-    local security_list=/tmp/apt-security.list
-    grep -ir --no-filename security /etc/apt/sources.list /etc/apt/sources.list.d \
-        > "$security_list"
+    local apt_security_parts
+    apt_security_parts=$(mktemp -d)
+
+    # Extract sourcelists in oneline format that contain "security"
+    grep --ignore-case \
+        --recursive \
+        --no-filename \
+        --include="*.list" \
+        security \
+        /etc/apt/sources.list /etc/apt/sources.list.d || true \
+        > "$apt_security_parts/security.list"
+
+    # Find deb822-style sourcelists and split the entries into parts by empty
+    # lines (which separate entries)
+    find /etc/apt/sources.list.d -type f -name '*.sources' -print | while read file; do
+        csplit \
+            --elide-empty-files \
+            --prefix "$apt_security_parts/$file" \
+            --quiet \
+            --suppress-match \
+            --suffix-format "%02d.sources" \
+            "$file" \
+            '/^$/' '{*}'
+    done
+
+    # Delete deb822-style files that are not security related
+    grep --files-without-match \
+        --recursive \
+        --null \
+        security "$apt_security_parts" \
+        | xargs --null --no-run-if-empty rm
+
     apt_get_noninteractive upgrade \
-        -o Dir::Etc::SourceList="$security_list" \
-        -o Dir::Etc::SourceParts="-"
-    rm "$security_list"
+        -o Dir::Etc::SourceList="-" \
+        -o Dir::Etc::SourceParts="$apt_security_parts"
+    rm -rf "$apt_security_parts"
 }
 
 # Update the repo and apply all security updates. If people want to upgrade
