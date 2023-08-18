@@ -77,6 +77,7 @@ def create_master_node(
         'saltstack_repo': saltstack_repo,
         'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
         'permit_root_ssh': provider.username == 'root',
+        'add_user': salt_branch != 'latest' and int(salt_branch[:salt_branch.find('.')]) < 3006,
     })
 
     key_name = utils.build_ssh_key_name(minion_id)

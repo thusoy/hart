@@ -6,7 +6,9 @@
 
 # Create a dedicated user for saltstack since they don't do it by default
 # Ref. https://github.com/saltstack/salt/issues/38871
+{% if add_user %}
 adduser salt --system --shell /usr/sbin/nologin --group --home /etc/salt
+{% endif %}
 
 cat > /etc/salt/minion <<EOF
 ##########################################
