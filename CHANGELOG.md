@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- GCP images failing to boot due to picking the wrong architecture for the boot image.
+
+
 0.16.0 - 2023-08-18
 -------------------
 

@@ -149,7 +149,14 @@ class GCEProvider(BaseLibcloudProvider):
             raise UserError('Unknown zone %r' % desired_zone)
 
         subnet_string = kwargs.get('subnet')
-        image = self.driver.ex_get_image('debian-%d' % DEBIAN_VERSIONS[debian_codename])
+        # The arm image looks like
+        # debian-<debian-numeric-version>-<debian-codename>-arm64-v20231010
+        # The x86-64 image looks like
+        # debian-<debian-numeric-version>-<debian-codename>-v20231010
+        # To avoid getting the wrong arch on the image we need to include enough
+        # of the prefix to identify the image uniquely
+        image = self.driver.ex_get_image('debian-%d-%s-v' % (
+            DEBIAN_VERSIONS[debian_codename], debian_codename))
         volume_type = kwargs.get('volume_type')
         disk_type = self.driver.ex_get_disktype(volume_type, zone=zone)
         regional_subnets = self.driver.ex_list_subnetworks(region)
