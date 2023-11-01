@@ -58,14 +58,20 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None,
     size = merged_config.setdefault('size', provider.default_size)
 
     default_minion_config = {
-        # Default to keep retrying a master connection if it fails
-        'master_tries': -1,
         'grains': {
             'roles': [role],
             'hart.region': region,
             'hart.provider': provider.alias,
             'hart.size': size,
         },
+        # Default to keep retrying a master connection if it fails
+        'master_tries': -1,
+        # This config is necessary to make salt try to reconnect to a master on
+        # a new IP in case of failover
+        'master_alive_interval': 90,
+        'auth_safemode': False,
+        'master_type': 'failover',
+        'retry_dns': 0,
     }
 
     saltmaster = merged_config.pop('saltmaster', None)

@@ -29,7 +29,7 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
 
     provider = EC2Provider('key_id', 'secret_key')
     arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole', provider=provider)
-    assert arguments == {
+    assert is_subdict({
         'minion_id': 'myrole.ec2.example.com',
         'provider': provider,
         'region': 'eu-central-1',
@@ -39,7 +39,6 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
         'zone': 'eu-central-1a',
         'minion_config': {
             'master': 'salt.example.com',
-            'master_tries': -1,
             'grains': {
                 'roles': [
                     'myrole',
@@ -49,7 +48,7 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
                 'hart.size': 't3.nano',
             },
         },
-    }
+    }, arguments)
 
 
 def test_get_minion_arguments_region_inheritance(named_tempfile):
@@ -71,7 +70,7 @@ def test_get_minion_arguments_region_inheritance(named_tempfile):
     provider = DOProvider('foo')
     arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole',
         provider=provider, region='sfo3')
-    assert arguments == {
+    assert is_subdict({
         'minion_id': 'myrole.do.example.com',
         'provider': provider,
         'region': 'sfo3',
@@ -80,7 +79,6 @@ def test_get_minion_arguments_region_inheritance(named_tempfile):
         'salt_branch': '3002',
         'minion_config': {
             'master': 'salt.example.com',
-            'master_tries': -1,
             'grains': {
                 'roles': [
                     'myrole',
@@ -90,7 +88,7 @@ def test_get_minion_arguments_region_inheritance(named_tempfile):
                 'hart.size': 's-4vcpu-4gb',
             },
         },
-    }
+    }, arguments)
 
 
 def test_get_minion_arguments_for_invalid_role(named_tempfile):
@@ -155,8 +153,7 @@ def test_get_minion_arguments_without_provider(named_tempfile):
     assert arguments['region'] == 'sfo3'
     assert arguments['size'] == 's-1vcpu-4gb'
     assert arguments['private_networking'] == True
-    assert arguments['minion_config'] == {
-        'master_tries': -1,
+    assert is_subdict({
         'grains': {
             'roles': [
                 'myrole',
@@ -165,7 +162,7 @@ def test_get_minion_arguments_without_provider(named_tempfile):
             'hart.region': 'sfo3',
             'hart.size': 's-1vcpu-4gb',
         },
-    }
+    }, arguments['minion_config'])
 
 
 def test_get_minion_arguments_with_minion_config(named_tempfile):
@@ -179,7 +176,7 @@ def test_get_minion_arguments_with_minion_config(named_tempfile):
     named_tempfile.close()
 
     arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole', provider=DOProvider('foo'))
-    assert arguments['minion_config'] == {
+    assert is_subdict({
         'master_tries': -1,
         'grains': {
             'environment': 'prod',
@@ -190,7 +187,7 @@ def test_get_minion_arguments_with_minion_config(named_tempfile):
             'hart.region': 'sfo3',
             'hart.size': DOProvider.default_size,
         },
-    }
+    }, arguments['minion_config'])
 
 
 def test_setting_provider_extensions(named_tempfile):
@@ -254,3 +251,13 @@ def test_get_provider_from_role(named_tempfile):
     provider = get_provider_for_role(named_tempfile.name, 'myrole', None)
 
     assert isinstance(provider, EC2Provider)
+
+
+def is_subdict(subset, superset):
+    # Kudos to https://stackoverflow.com/a/57675231/5590192 for this, using this
+    # for testing to avoid config values added by hart from bloating the test assertions
+    if isinstance(subset, dict):
+        return all(key in superset and is_subdict(val, superset[key]) for key, val in subset.items())
+
+    # Assume that subset is a plain value if the above doesn't match match
+    return subset == superset
