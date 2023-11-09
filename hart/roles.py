@@ -97,6 +97,11 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None,
     merged_config['region'] = region
     merged_config['minion_config'] = default_minion_config
 
+    if provider.alias == 'gce':
+        merged_config.setdefault('labels', {}).update({
+            'hart-role': role,
+        })
+
     return merged_config
 
 
