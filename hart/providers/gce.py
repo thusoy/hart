@@ -121,10 +121,10 @@ class GCEProvider(BaseLibcloudProvider):
             choices=('pd-standard', 'pd-ssd'))
         parser.add_argument('--enable-oslogin', action='store_true',
             help='By default OS Login is disabled, pass this flag to enable it for this minion')
-        # To use the highest-performing disk on GCE (local ssd mounted over
-        # NVMe) we need to mount multiple disks as that can't be the boot disk.
-        # Decide on a CLI convention for specifying arbitrary additional disks.
-        # Ref. https://cloud.google.com/compute/docs/disks/#introduction
+        parser.add_argument('--local-ssds', type=int, default=0,
+            help='How many local ssds to attach (using NVMe). The disks will not be '
+            'formatted or mounted, this needs to be done outside of hart (f. ex in an '
+            'init script, or from salt)')
 
 
     def create_node(self,
@@ -161,6 +161,27 @@ class GCEProvider(BaseLibcloudProvider):
         disk_type = self.driver.ex_get_disktype(volume_type, zone=zone)
         regional_subnets = self.driver.ex_list_subnetworks(region)
         subnet = get_selected_or_default_subnet(regional_subnets, subnet_string)
+        disks = [{
+            'autoDelete': True,
+            'boot': True,
+            'type': 'PERSISTENT', # The boot drive has to be persistent
+            'mode': 'READ_WRITE',
+            'initializeParams': {
+                'diskSizeGb': kwargs.get('volume_size'),
+                'diskType': disk_type.extra['selfLink'],
+                'sourceImage': image.extra['selfLink']
+            }
+        }]
+        local_ssd = kwargs.get('local_ssds', 0)
+        for i in range(local_ssd):
+            disks.append({
+                'autoDelete': True,
+                'type': 'SCRATCH',
+                'interface': 'NVME',
+                'initializeParams': {
+                    'diskType': f'zones/{desired_zone}/diskTypes/local-ssd',
+                }
+            })
         node = self.driver.create_node(
             name=name_from_minion_id(minion_id),
             size=size,
@@ -178,17 +199,7 @@ class GCEProvider(BaseLibcloudProvider):
                 'enable-oslogin': kwargs.get('enable_oslogin', False),
             },
             ex_labels=kwargs.get('labels'),
-            ex_disks_gce_struct=[{
-                'autoDelete': True,
-                'boot': True,
-                'type': 'PERSISTENT', # The boot drive has to be persistent
-                'mode': 'READ_WRITE',
-                'initializeParams': {
-                    'diskSizeGb': kwargs.get('volume_size'),
-                    'diskType': disk_type.extra['selfLink'],
-                    'sourceImage': image.extra['selfLink']
-                }
-            }],
+            ex_disks_gce_struct=disks,
         )
         return node, None
 

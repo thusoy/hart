@@ -9,6 +9,7 @@ UNRELEASED -
 
 ## Added
 - Default to adding a `hart-role` label on GCE when creating minion from role.
+- `--local-ssds` to automatically attach Local SSD for the GCE provider.
 
 
 0.16.2 - 2023-11-01
