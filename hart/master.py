@@ -5,7 +5,7 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
-from .ssh import get_verified_ssh_client, ssh_run_command
+from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 
 
 def create_master(
@@ -119,17 +119,7 @@ def connect_to_master(hart_node, script, authorize_key=None):
         if authorize_key:
             ssh_run_command(client, 'echo "%s" >> ~/.ssh/authorized_keys' % authorize_key)
         if script:
-            sftp_client = client.open_sftp()
-            # Preserving this on disk as a record of how the master was created
-            script_path = '/root/hart-master-init'
-            with sftp_client.file(script_path, 'wx') as remote_file:
-                with open(script, 'rb') as local_file:
-                    chunk_size = 16*2**10
-                    for chunk in iter(lambda: local_file.read(chunk_size), b''):
-                        remote_file.write(chunk)
-            sftp_client.chmod(script_path, 0o700)
-            sftp_client.close()
-            ssh_run_command(client, script_path, timeout=None)
+            ssh_run_init_script(client, script)
 
         master_pubkeys = ssh_run_command(client,
             'for pubkey in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$pubkey"; done',

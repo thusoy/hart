@@ -25,6 +25,7 @@ def create_minion(
         tags=None,
         private_networking=False,
         minion_config=None,
+        script=None,
         **kwargs
         ):
     hart_node = create_node(
@@ -40,7 +41,7 @@ def create_minion(
         **kwargs
     )
     try:
-        connect_minion(hart_node)
+        connect_minion(hart_node, script)
     except:
         log_error('Destroying node since it failed to connect')
         hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
@@ -48,7 +49,7 @@ def create_minion(
         raise
 
 
-def connect_minion(hart_node):
+def connect_minion(hart_node, script):
     username = hart_node.provider.username
     with get_verified_ssh_client(
             hart_node.public_ip,
@@ -60,6 +61,8 @@ def connect_minion(hart_node):
         trust_minion_key(hart_node.minion_id, minion_pubkey)
         print('Minion added: %s' % hart_node.public_ip)
         verify_minion_connection(client, hart_node.minion_id, username)
+        if script:
+            ssh_run_init_script(client, script)
         hart_node.provider.post_connect(hart_node)
 
 

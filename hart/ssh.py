@@ -69,6 +69,21 @@ def ssh_run_command(client, command, timeout=3, log_stdout=True):
     return ''.join(captured_stdout)
 
 
+def ssh_run_init_script(client, local_script_path):
+    sftp_client = client.open_sftp()
+    # Preserving this on disk as a record of how the node was created
+    remote_script_path = '/root/hart-init'
+    with sftp_client.file(remote_script_path, 'wx') as remote_file:
+        with open(local_script_path, 'rb') as local_file:
+            chunk_size = 16*2**10
+            for chunk in iter(lambda: local_file.read(chunk_size), b''):
+                remote_file.write(chunk)
+    sftp_client.chmod(remote_script_path, 0o700)
+    sftp_client.close()
+    print('Running custom init script')
+    ssh_run_command(client, remote_script_path, timeout=None)
+
+
 @contextlib.contextmanager
 def get_verified_ssh_client(ip, ssh_key, canary, username='root'):
     client = connect_to_node(ip, ssh_key, username)
