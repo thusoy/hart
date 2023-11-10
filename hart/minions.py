@@ -11,7 +11,7 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
-from .ssh import get_verified_ssh_client, ssh_run_command
+from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 from .utils import log_error
 
 
