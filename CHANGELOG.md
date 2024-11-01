@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Changed
+- Swapped to the new Broadcom apt repos for installing salt. Since this repo
+  doesn't enable pinning salt version in the url, `--salt-branch` was replaced
+  with `--salt-version` which will be used to set an apt pin for the given
+  version. This can be either a major version like `3006.*`, or a specific minor
+  version like `3007.1`.
+
+
 0.17.0 - 2023-11-10
 -------------------
 
