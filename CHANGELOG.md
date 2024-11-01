@@ -14,6 +14,9 @@ UNRELEASED -
   version. This can be either a major version like `3006.*`, or a specific minor
   version like `3007.1`.
 
+## Added
+- Attempt to detect init script failures on GCE (like we do for other providers).
+
 
 0.17.0 - 2023-11-10
 -------------------

@@ -211,8 +211,14 @@ class GCEProvider(BaseLibcloudProvider):
         tail_pid = int(stdout.readline())
         for line in stdout:
             print(line, end='')
-            # TODO: This doesn't detect if the init script failed for some reason, need
-            # to find a reliable way to do that
+            if 'Script "startup-script" failed with error:' in line:
+                # Best effort attempt to detect script failure, not sure if this
+                # will always appear, but worst case we'll time out if it fails
+                # and we don't find a marker.
+                stdout.channel.close()
+                client.exec_command('kill %d' % tail_pid)
+                raise ValueError('Init script failed')
+
             if 'hart-init-complete' in line:
                 stdout.channel.close()
                 client.exec_command('kill %d' % tail_pid)
