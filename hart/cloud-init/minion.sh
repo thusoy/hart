@@ -28,4 +28,11 @@ openssl rsa -in /etc/salt/pki/minion/minion.pem -pubout -out /etc/salt/pki/minio
 # Install the core packages needed
 apt_get_noninteractive install salt-minion
 
+# Salt versions 3006.{8,9} and 3007.{0,1} has a bug where there's a warning
+# always logged from this module, just remove it to prevent this.
+# Ref. https://github.com/saltstack/salt/issues/66467
+rm -f \
+    /opt/saltstack/salt/lib/python3.10/site-packages/salt/utils/psutil_compat.py \
+    /opt/saltstack/salt/lib/python3.10/site-packages/salt/utils/__pycache__/psutil_compat.cpython-310.pyc
+
 echo 'hart-init-complete'

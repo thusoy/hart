@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- Remove an annoying warning for `psutil_compat` from salt.
+
+
 0.18.0 - 2024-11-01
 -------------------
 
