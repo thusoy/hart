@@ -1,4 +1,4 @@
-FROM debian:stretch-slim as base
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
@@ -7,13 +7,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-virtualenv \
         curl \
         gnupg2 && \
-    curl -s https://repo.saltstack.com/apt/debian/9/amd64/latest/SALTSTACK-GPG-KEY.pub \
-        | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add - && \
-    apt-get install -y --no-install-recommends \
-        salt-master
+    curl -fsSL https://packages.broadcom.com/artifactory/api/security/keypair/SaltProjectKey/public \
+        | gpg --dearmor > /etc/apt/keyrings/salt-archive-keyring-2023.pgp && \
+    echo "deb [signed-by=/etc/apt/keyrings/salt-archive-keyring-2023.pgp arch=amd64] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main" > /etc/apt/sources.list.d/salt.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends salt-master
 
-# Silence pip warnings about python2 EOL
-ENV PYTHONWARNINGS=ignore:DEPRECATION
 # Set a utf-8 locale to make hart properly decode utf-8 from hosts (I think
 # this should have been set explicitly by paramiko)
 ENV LC_CTYPE=C.UTF-8
