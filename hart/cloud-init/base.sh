@@ -96,7 +96,16 @@ PGEjZDoMzsZx9Zx6SO9XCS7XgYHVc8/B2LGSxj+rpZ6lBbywH88lNnrm/SpQB74U
 EOF
 
 # Add the salt debian repo
-echo 'deb [signed-by=/usr/share/keyrings/salt-archive-keyring-2023.gpg] {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
+echo 'deb [signed-by=/usr/share/keyrings/salt-archive-keyring-2023.gpg] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main' > /etc/apt/sources.list.d/saltstack.list
+
+{% if salt_version -%}
+# Set a package pin for the desired salt version
+cat <<EOF > /etc/apt/preferences.d/salt-pin-1001
+Package: salt-*
+Pin: version {{ salt_version }}
+Pin-Priority: 1001
+EOF
+{% endif %}
 
 apply_security_updates () {
     local apt_security_parts

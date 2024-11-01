@@ -166,8 +166,8 @@ class HartCLI:
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')
-        parser.add_argument('--salt-branch', default=DefaultArgumentString('latest'),
-            help='The salt branch to use. Default: %(default)s')
+        parser.add_argument('--salt-version',
+            help='The salt version to install and pin. Default installs latest without any pin.')
         parser.add_argument('--minion-config', type=type_json,
             help='Minion config in JSON')
 

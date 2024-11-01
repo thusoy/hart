@@ -13,7 +13,7 @@ def create_master(
         provider,
         region=None,
         size=None,
-        salt_branch='latest',
+        salt_version=None,
         debian_codename='bookworm',
         tags=None,
         private_networking=False,
@@ -28,7 +28,7 @@ def create_master(
         provider,
         region,
         size,
-        salt_branch,
+        salt_version,
         debian_codename,
         tags,
         private_networking,
@@ -49,7 +49,7 @@ def create_master_node(
         provider,
         region=None,
         size=None,
-        salt_branch='latest',
+        salt_version=None,
         debian_codename='bookworm',
         tags=None,
         private_networking=False,
@@ -68,16 +68,15 @@ def create_master_node(
     if minion_config is not None:
         default_minion_config.update(minion_config)
 
-    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch)
     cloud_init = cloud_init_template.render(**{
         'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),
         'grains': yaml.dump({'grains': grains}) if grains else None,
+        'salt_version': salt_version,
         'ssh_canary': ssh_canary,
-        'saltstack_repo': saltstack_repo,
         'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
         'permit_root_ssh': provider.username == 'root',
-        'add_user': salt_branch != 'latest' and int(salt_branch[:salt_branch.find('.')]) < 3006,
+        'add_user': salt_version and int(salt_version[:salt_version.find('.')]) < 3006,
     })
 
     key_name = utils.build_ssh_key_name(minion_id)
