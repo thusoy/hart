@@ -15,7 +15,7 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
         [hart]
         saltmaster = "salt.example.com"
         role_naming_scheme = "{role}.{provider}.example.com"
-        salt_branch = "3001"
+        salt_version = "3001.*"
 
         [roles.myrole]
         private_networking = true
@@ -35,7 +35,7 @@ def test_get_minion_arguments_provider_inheritance(named_tempfile):
         'region': 'eu-central-1',
         'size': 't3.nano',
         'private_networking': True,
-        'salt_branch': '3001',
+        'salt_version': '3001.*',
         'zone': 'eu-central-1a',
         'minion_config': {
             'master': 'salt.example.com',
@@ -56,7 +56,7 @@ def test_get_minion_arguments_region_inheritance(named_tempfile):
         [hart]
         saltmaster = "salt.example.com"
         role_naming_scheme = "{role}.{provider}.example.com"
-        salt_branch = "3002"
+        salt_version = "3002.*"
 
         [roles.myrole.do]
         size = "s-v2vcpu-2gb"
@@ -76,7 +76,7 @@ def test_get_minion_arguments_region_inheritance(named_tempfile):
         'region': 'sfo3',
         'size': 's-4vcpu-4gb',
         'private_networking': True,
-        'salt_branch': '3002',
+        'salt_version': '3002.*',
         'minion_config': {
             'master': 'salt.example.com',
             'grains': {
