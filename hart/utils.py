@@ -6,9 +6,6 @@ from collections import namedtuple
 
 import jinja2
 
-from .constants import DEBIAN_VERSIONS
-from .exceptions import UserError
-
 
 HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary node_extra')
 
@@ -26,18 +23,6 @@ def get_cloud_init_template(template_name='minion.sh'):
     template_directory = os.path.join(os.path.dirname(__file__), 'cloud-init')
     environment = jinja2.Environment(loader=jinja2.FileSystemLoader(template_directory))
     return environment.get_template(template_name)
-
-
-def get_saltstack_repo_url(debian_codename, salt_branch):
-    # As of 2023-08-18 salt hasn't released binaries for bookworm, but the
-    # onedir installation should work here as well, thus using the bullseye
-    # repo until they get a release out.
-    if debian_codename == "bookworm":
-        debian_codename = "bullseye"
-
-    debian_version = DEBIAN_VERSIONS[debian_codename]
-    return 'https://repo.saltproject.io/salt/py3/debian/%s/amd64/%s %s main' % (
-        debian_version, salt_branch, debian_codename)
 
 
 def build_ssh_key_name(minion_id):

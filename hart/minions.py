@@ -3,14 +3,12 @@
 import json
 import os
 import subprocess
-import sys
 import time
 import traceback
 
 import yaml
 
 from . import utils
-from .constants import DEBIAN_VERSIONS
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 from .utils import log_error
 
@@ -20,7 +18,7 @@ def create_minion(
         provider,
         region=None,
         size=None,
-        salt_branch='latest',
+        salt_branch=None,
         debian_codename='bullseye',
         tags=None,
         private_networking=False,
@@ -71,7 +69,7 @@ def create_node(
         provider,
         region=None,
         size=None,
-        salt_branch='latest',
+        salt_branch=None,
         debian_codename='bullseye',
         tags=None,
         private_networking=False,
@@ -87,15 +85,13 @@ def create_node(
     if minion_config is not None:
         default_minion_config.update(minion_config)
 
-    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch)
     cloud_init = cloud_init_template.render(**{
         'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),
         'ssh_canary': ssh_canary,
         'master_pubkey': master_pubkey,
-        'saltstack_repo': saltstack_repo,
-        'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
         'permit_root_ssh': provider.username == 'root',
+        'salt_branch': salt_branch,
     })
 
     key_name = utils.build_ssh_key_name(minion_id)

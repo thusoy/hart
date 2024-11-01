@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Changed
+- Migrated to the new Salt Project repo according to https://saltproject.io/blog/salt-project-package-repo-migration-and-guidance/
+
+
 0.17.0 - 2023-11-10
 -------------------
 

@@ -35,7 +35,6 @@ apt_get_noninteractive () {
         $@
 }
 
-{% if wait_for_apt %}
 # On some providers (notably, Vultr) there will be a apt-daily systemd service
 # that will start when the node boots, causing concurrent access problems for
 # this script. Thus wait until other instances are done before continuing, but
@@ -44,7 +43,6 @@ echo 'Waiting for apt startup tasks to finish'
 systemd-run \
     --property="After=apt-daily.service apt-daily-upgrade.service" \
     --wait /bin/true
-{% endif %}
 
 # Update the repo to get updated keys and archives, then install https transport
 # for apt before adding the salt repo using https, and gnupg for apt-key
@@ -96,7 +94,13 @@ PGEjZDoMzsZx9Zx6SO9XCS7XgYHVc8/B2LGSxj+rpZ6lBbywH88lNnrm/SpQB74U
 EOF
 
 # Add the salt debian repo
-echo 'deb [signed-by=/usr/share/keyrings/salt-archive-keyring-2023.gpg] {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
+echo "deb [signed-by=/usr/share/keyrings/salt-archive-keyring-2023.gpg] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main" > /etc/apt/sources.list.d/saltstack.list
+
+{% if salt_branch %}
+echo 'Package: salt-*
+Pin: version {{ salt_branch }}.*
+Pin-Priority: 1001' | tee /etc/apt/preferences.d/salt-pin-1001
+{% endif %}
 
 apply_security_updates () {
     local apt_security_parts
