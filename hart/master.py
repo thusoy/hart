@@ -68,13 +68,11 @@ def create_master_node(
     if minion_config is not None:
         default_minion_config.update(minion_config)
 
-    saltstack_repo = utils.get_saltstack_repo_url(debian_codename, salt_branch)
     cloud_init = cloud_init_template.render(**{
         'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),
         'grains': yaml.dump({'grains': grains}) if grains else None,
         'ssh_canary': ssh_canary,
-        'saltstack_repo': saltstack_repo,
         'wait_for_apt': DEBIAN_VERSIONS[debian_codename] >= 10,
         'permit_root_ssh': provider.username == 'root',
         'add_user': salt_branch != 'latest' and int(salt_branch[:salt_branch.find('.')]) < 3006,

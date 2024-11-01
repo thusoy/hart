@@ -96,7 +96,7 @@ PGEjZDoMzsZx9Zx6SO9XCS7XgYHVc8/B2LGSxj+rpZ6lBbywH88lNnrm/SpQB74U
 EOF
 
 # Add the salt debian repo
-echo 'deb [signed-by=/usr/share/keyrings/salt-archive-keyring-2023.gpg] {{ saltstack_repo }}' > /etc/apt/sources.list.d/saltstack.list
+echo 'deb [signed-by=/usr/share/keyrings/salt-archive-keyring-2023.gpg] https://packages.broadcom.com/artifactory/saltproject-deb/ stable main' > /etc/apt/sources.list.d/saltstack.list
 
 apply_security_updates () {
     local apt_security_parts
