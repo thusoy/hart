@@ -182,6 +182,14 @@ class GCEProvider(BaseLibcloudProvider):
                     'diskType': f'zones/{desired_zone}/diskTypes/local-ssd',
                 }
             })
+        # Generally speaking the default service account on the machine
+        # shouldn't be used for authing to anything, since it's easily available
+        # to any process running on the machine. The only thing we grant it access
+        # to is metrics and logging, to simplify collecting basic ops data.
+        oauth_scopes = [
+            "https://www.googleapis.com/auth/logging.write",
+            "https://www.googleapis.com/auth/monitoring.write",
+        ]
         node = self.driver.create_node(
             name=name_from_minion_id(minion_id),
             size=size,
@@ -200,6 +208,7 @@ class GCEProvider(BaseLibcloudProvider):
             },
             ex_labels=kwargs.get('labels'),
             ex_disks_gce_struct=disks,
+            ex_service_accounts=[{"scopes": oauth_scopes}]
         )
         return node, None
 

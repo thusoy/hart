@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Changed
+- Allow the default GCE service account access to the oauth scopes for writing
+  logging and metrics data. Note that the service account also need the
+  necessary IAM roles to actually perform the writes.
+
+
 0.18.1 - 2024-11-01
 -------------------
 
