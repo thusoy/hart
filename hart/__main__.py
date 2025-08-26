@@ -184,7 +184,7 @@ class HartCLI:
             'private network (f.ex the saltmaster) and the public ssh port is '
             'firewalled.')
         parser.add_argument('-d', '--debian-codename',
-            choices=DEBIAN_VERSIONS.keys(), default=DefaultArgumentString('bookworm'),
+            choices=DEBIAN_VERSIONS.keys(), default=DefaultArgumentString('trixie'),
             help='Which debian version to create. Default: %(default)s')
         parser.add_argument('--use-py2', action='store_true',
             help='Use py2 instead of py3 for saltstack.')

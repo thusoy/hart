@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+
+UNRELEASED -
+-------------------
+
+## Added
+- Support for Debian Trixie and make it the default version.
+
+
 0.20.0 - 2026-09-17
 -------------------
 
