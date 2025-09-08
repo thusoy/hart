@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+# Added
+- Enable using Hyperdisk for GCE instances.
+
 0.18.2 - 2024-12-11
 -------------------
 

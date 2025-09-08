@@ -118,7 +118,15 @@ class GCEProvider(BaseLibcloudProvider):
             help='The size of the boot drive in GB, minimum 10')
         parser.add_argument('--volume-type', default='pd-ssd',
             help='Which volume type to use for the boot drive. Default: %(default)s',
-            choices=('pd-standard', 'pd-ssd'))
+            choices=(
+                'pd-standard',
+                'pd-ssd',
+                'hyperdisk-balanced',
+                'hyperdisk-balanced-high-availability',
+                'hyperdisk-extreme',
+                'hyperdisk-throughput',
+                'hyperdisk-ml',
+            ))
         parser.add_argument('--enable-oslogin', action='store_true',
             help='By default OS Login is disabled, pass this flag to enable it for this minion')
         parser.add_argument('--local-ssds', type=int, default=0,
