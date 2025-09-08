@@ -6,4 +6,3 @@ pylint
 twine
 watchdog
 argh
-pathtools
