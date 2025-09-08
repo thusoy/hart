@@ -21,7 +21,7 @@ create_virtualenv () {
     if [ -d venv ]; then
         return
     fi
-    virtualenv venv -p "$python_binary"
+    $python_binary -m venv venv
     ./venv/bin/pip install -U pip setuptools wheel
 }
 
