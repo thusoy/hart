@@ -10,6 +10,7 @@
 adduser salt --system --shell /usr/sbin/nologin --group --home /etc/salt
 {% endif %}
 
+mkdir -p /etc/salt
 cat > /etc/salt/minion <<EOF
 ##########################################
 # Temporary salt minion config from hart #
