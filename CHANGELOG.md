@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED
+----------
+
+## Added
+- New `--connect-via-private-ip` flag (and `connect_via_private_ip` kwarg to
+  `create_minion`/`create_node`/`create_master`) to bootstrap nodes over their
+  private IP. Useful when hart runs on a host that can reach the node's private
+  network (f.ex the saltmaster) and the public ssh port is firewalled. The
+  chosen address is exposed as `HartNode.connect_ip`.
+
 0.18.3 - 2025-09-08
 -------------------
 

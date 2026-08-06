@@ -11,6 +11,7 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
+from .exceptions import UserError
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 from .utils import log_error
 
@@ -26,6 +27,7 @@ def create_minion(
         private_networking=False,
         minion_config=None,
         script=None,
+        connect_via_private_ip=False,
         **kwargs
         ):
     hart_node = create_node(
@@ -38,6 +40,7 @@ def create_minion(
         tags,
         private_networking,
         minion_config,
+        connect_via_private_ip=connect_via_private_ip,
         **kwargs
     )
     try:
@@ -51,8 +54,9 @@ def create_minion(
 
 def connect_minion(hart_node, script):
     username = hart_node.provider.username
+    connect_ip = hart_node.connect_ip or hart_node.public_ip
     with get_verified_ssh_client(
-            hart_node.public_ip,
+            connect_ip,
             hart_node.ssh_key,
             hart_node.ssh_canary,
             username) as client:
@@ -76,6 +80,7 @@ def create_node(
         tags=None,
         private_networking=False,
         minion_config=None,
+        connect_via_private_ip=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -119,8 +124,17 @@ def create_node(
                 **kwargs)
             node = provider.wait_for_public_ip(node)
             public_ip = node.public_ips[0]
-            print('Node running at %s' % public_ip)
-            return utils.HartNode(minion_id, public_ip, node, provider, ssh_key, ssh_canary, extra)
+            connect_ip = public_ip
+            if connect_via_private_ip:
+                if not node.private_ips:
+                    raise UserError('Cannot connect via private IP, node has none')
+                connect_ip = node.private_ips[0]
+                print('Node running at %s, connecting via private IP %s' % (
+                    public_ip, connect_ip))
+            else:
+                print('Node running at %s' % public_ip)
+            return utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
+                ssh_canary, extra, connect_ip)
         except:
             traceback.print_exc()
             if node:

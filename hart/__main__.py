@@ -161,6 +161,11 @@ class HartCLI:
             'your setup and deploy any secrets you might need.')
         parser.add_argument('-p', '--private-networking', action='store_true',
             help='Whether to enable private networking on the node')
+        parser.add_argument('--connect-via-private-ip', action='store_true',
+            help='Bootstrap the node over its private IP instead of the public '
+            'one. Use when hart runs on a host that can reach the node\'s '
+            'private network (f.ex the saltmaster) and the public ssh port is '
+            'firewalled.')
         parser.add_argument('-d', '--debian-codename',
             choices=DEBIAN_VERSIONS.keys(), default=DefaultArgumentString('bookworm'),
             help='Which debian version to create. Default: %(default)s')

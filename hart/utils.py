@@ -10,7 +10,9 @@ from .constants import DEBIAN_VERSIONS
 from .exceptions import UserError
 
 
-HartNode = namedtuple('HartNode', 'minion_id public_ip node provider ssh_key ssh_canary node_extra')
+HartNode = namedtuple('HartNode',
+    'minion_id public_ip node provider ssh_key ssh_canary node_extra connect_ip',
+    defaults=(None,))
 
 class TerminalColors:
     WARNING = '\033[33m'
