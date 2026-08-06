@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-UNRELEASED
-----------
+UNRELEASED -
+-------------------
 
 ## Added
 - New `--connect-via-private-ip` flag (and `connect_via_private_ip` kwarg to
