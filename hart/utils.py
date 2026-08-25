@@ -24,6 +24,12 @@ def create_token():
     return base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode('utf-8')
 
 
+def get_private_ip(node):
+    if not node.private_ips:
+        raise UserError('Cannot connect via private IP, node has none')
+    return node.private_ips[0]
+
+
 def get_cloud_init_template(template_name='minion.sh'):
     template_directory = os.path.join(os.path.dirname(__file__), 'cloud-init')
     environment = jinja2.Environment(loader=jinja2.FileSystemLoader(template_directory))

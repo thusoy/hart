@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Added
+- New `--no-external-ip` flag for GCE (and `no_external_ip` kwarg to
+  `create_minion`/`create_node`/`create_master`) to create nodes without an
+  external IP. These are bootstrapped over their private IP, and only reach the
+  internet if their subnet has a Cloud NAT gateway.
+
 0.18.4 - 2026-08-06
 -------------------
 

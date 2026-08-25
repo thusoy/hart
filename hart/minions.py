@@ -11,9 +11,8 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
-from .exceptions import UserError
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
-from .utils import log_error
+from .utils import get_private_ip, log_error
 
 
 def create_minion(
@@ -28,6 +27,7 @@ def create_minion(
         minion_config=None,
         script=None,
         connect_via_private_ip=False,
+        no_external_ip=False,
         **kwargs
         ):
     hart_node = create_node(
@@ -41,6 +41,7 @@ def create_minion(
         private_networking,
         minion_config,
         connect_via_private_ip=connect_via_private_ip,
+        no_external_ip=no_external_ip,
         **kwargs
     )
     try:
@@ -63,7 +64,7 @@ def connect_minion(hart_node, script):
         hart_node.provider.wait_for_init_script(client, hart_node.node_extra)
         minion_pubkey = get_minion_pubkey(client, should_sudo=username != 'root')
         trust_minion_key(hart_node.minion_id, minion_pubkey)
-        print('Minion added: %s' % hart_node.public_ip)
+        print('Minion added: %s' % connect_ip)
         verify_minion_connection(client, hart_node.minion_id, username)
         if script:
             ssh_run_init_script(client, script)
@@ -81,6 +82,7 @@ def create_node(
         private_networking=False,
         minion_config=None,
         connect_via_private_ip=False,
+        no_external_ip=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -121,18 +123,22 @@ def create_node(
                 cloud_init,
                 private_networking,
                 tags,
+                no_external_ip=no_external_ip,
                 **kwargs)
-            node = provider.wait_for_public_ip(node)
-            public_ip = node.public_ips[0]
-            connect_ip = public_ip
-            if connect_via_private_ip:
-                if not node.private_ips:
-                    raise UserError('Cannot connect via private IP, node has none')
-                connect_ip = node.private_ips[0]
-                print('Node running at %s, connecting via private IP %s' % (
-                    public_ip, connect_ip))
+            if no_external_ip:
+                public_ip = None
+                connect_ip = get_private_ip(node)
+                print('Node running at %s (no external IP)' % connect_ip)
             else:
-                print('Node running at %s' % public_ip)
+                node = provider.wait_for_public_ip(node)
+                public_ip = node.public_ips[0]
+                connect_ip = public_ip
+                if connect_via_private_ip:
+                    connect_ip = get_private_ip(node)
+                    print('Node running at %s, connecting via private IP %s' % (
+                        public_ip, connect_ip))
+                else:
+                    print('Node running at %s' % public_ip)
             return utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
                 ssh_canary, extra, connect_ip)
         except:
