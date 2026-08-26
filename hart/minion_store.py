@@ -15,6 +15,7 @@ custom salt module) without importing hart. The document looks like this:
             "region": "us-east-1",
             "zone": "us-east-1a",
             "size": "t3.micro",
+            "debian_codename": "bookworm",
             "roles": ["consumer"],
             "public_ips": ["203.0.113.5"],
             "private_ips": ["10.0.0.5"],
@@ -55,6 +56,7 @@ def build_record(
         region=None,
         zone=None,
         size=None,
+        debian_codename=None,
         roles=None,
         created_at=None,
         ):
@@ -68,6 +70,7 @@ def build_record(
         'region': region,
         'zone': zone,
         'size': size,
+        'debian_codename': debian_codename,
         'roles': list(roles) if roles else [],
         'public_ips': list(node.public_ips or []),
         'private_ips': list(node.private_ips or []),

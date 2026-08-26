@@ -145,6 +145,7 @@ def create_node(
                 region=region,
                 zone=kwargs.get('zone'),
                 size=size,
+                debian_codename=debian_codename,
                 minion_config=default_minion_config,
             )
             return hart_node
@@ -178,7 +179,8 @@ def destroy_node(hart_node):
     remove_minion_from_store(hart_node.minion_id)
 
 
-def save_minion_to_store(hart_node, region=None, zone=None, size=None, minion_config=None):
+def save_minion_to_store(hart_node, region=None, zone=None, size=None,
+        debian_codename=None, minion_config=None):
     grains = (minion_config or {}).get('grains') or {}
     provider = hart_node.provider
     record = minion_store.build_record(
@@ -188,6 +190,7 @@ def save_minion_to_store(hart_node, region=None, zone=None, size=None, minion_co
         region=region,
         zone=zone,
         size=size or getattr(provider, 'default_size', None),
+        debian_codename=debian_codename,
         roles=grains.get('roles'),
     )
     # The store is bookkeeping, don't fail an otherwise successful launch if

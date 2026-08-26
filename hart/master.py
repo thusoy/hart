@@ -124,6 +124,7 @@ def create_master_node(
                 region=region,
                 zone=kwargs.get('zone'),
                 size=size,
+                debian_codename=debian_codename,
                 minion_config=default_minion_config,
             )
             return hart_node

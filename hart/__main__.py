@@ -229,6 +229,9 @@ class HartCLI:
         parser.add_argument('minion_id')
         parser.add_argument('-z', '--zone',
             help='The zone the minion is located in, if applicable')
+        parser.add_argument('-d', '--debian-codename',
+            choices=DEBIAN_VERSIONS.keys(),
+            help='The debian version the minion was deployed with, if known')
         parser.add_argument('--roles', type=lambda value: value.split(','), default=[],
             help='The roles of the minion, comma-separated')
 
@@ -333,6 +336,7 @@ class HartCLI:
             node,
             region=args.region,
             zone=args.zone,
+            debian_codename=args.debian_codename,
             roles=args.roles,
             created_at=getattr(node, 'created_at', None),
         )

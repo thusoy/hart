@@ -22,7 +22,8 @@ def build_record(minion_id='minion.example.com', provider='do', **overrides):
     node.public_ips = ['203.0.113.5']
     node.private_ips = ['10.0.0.5']
     record = minion_store.build_record(minion_id, provider, node,
-        region='ams3', zone=None, size='s-1vcpu-1gb', roles=['web'])
+        region='ams3', zone=None, size='s-1vcpu-1gb', debian_codename='bookworm',
+        roles=['web'])
     record.update(overrides)
     return record
 
@@ -79,6 +80,7 @@ def test_store_is_plain_versioned_json(isolated_minion_store):
     assert record['private_ips'] == ['10.0.0.5']
     assert record['node_id'] == 'node-123'
     assert record['node_name'] == 'minion.example.com'
+    assert record['debian_codename'] == 'bookworm'
     assert record['roles'] == ['web']
 
 
@@ -116,12 +118,13 @@ def test_create_node_saves_minion_to_store(mock_pubkey, mock_existing):
     node.name = 'minion.example.com'
 
     create_node('minion.example.com', provider, region='ams3',
-        minion_config={'grains': {'roles': ['web']}})
+        debian_codename='bookworm', minion_config={'grains': {'roles': ['web']}})
 
     record = minion_store.get_minion('minion.example.com')
     assert record['provider'] == 'do'
     assert record['region'] == 'ams3'
     assert record['size'] == 's-1vcpu-1gb'
+    assert record['debian_codename'] == 'bookworm'
     assert record['roles'] == ['web']
     assert record['public_ips'] == ['203.0.113.5']
     assert record['private_ips'] == ['10.0.0.5']
@@ -217,6 +220,7 @@ def test_import_minion_adds_node_to_store():
     args.provider = provider
     args.region = 'ams3'
     args.zone = None
+    args.debian_codename = 'bookworm'
     args.roles = ['web']
 
     HartCLI().cli_import_minion(args)
@@ -226,3 +230,4 @@ def test_import_minion_adds_node_to_store():
     assert record['region'] == 'ams3'
     assert record['roles'] == ['web']
     assert record['node_id'] == 'droplet-123'
+    assert record['debian_codename'] == 'bookworm'

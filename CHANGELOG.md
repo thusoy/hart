@@ -15,8 +15,8 @@ UNRELEASED -
 - A local store of the minions created by hart, by default at
   `/var/lib/hart/minions.json` (override with the `HART_MINION_STORE`
   environment variable). Each record holds the minion id, provider, region,
-  zone, size, roles, public and private IPs, and the node's id and name at the
-  provider. The store is plain JSON and updated atomically, so other tools
+  zone, size, debian codename, roles, public and private IPs, and the node's
+  id and name at the provider. The store is plain JSON and updated atomically, so other tools
   (like custom salt modules) can read it directly without locking or importing
   hart. Minions are added on create and removed on destroy, including when
   cleaning up after failed launches. Query it with the new `list-minions`
