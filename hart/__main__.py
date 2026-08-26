@@ -306,11 +306,18 @@ class HartCLI:
         # Build one spec per minion. Each call generates a fresh unique
         # minion id, and builds a separate provider instance since the
         # underlying provider drivers aren't guaranteed to be thread-safe.
-        specs = [
-            get_minion_arguments_for_role(
-                args.config, args.role, None, args.region, minion_cli_kwargs)
-            for minion_cli_kwargs in per_minion_cli_kwargs
-        ]
+        # Mirroring the single-minion path, the merged role arguments are
+        # applied on top of the full argument namespace so that
+        # provider-specific argument defaults (like the GCE volume type) are
+        # part of the spec.
+        base_args = dict(vars(args))
+        base_args.pop('count', None)
+        specs = []
+        for minion_cli_kwargs in per_minion_cli_kwargs:
+            spec = dict(base_args)
+            spec.update(get_minion_arguments_for_role(
+                args.config, args.role, None, args.region, minion_cli_kwargs))
+            specs.append(spec)
 
         return create_minions_in_parallel(specs)
 

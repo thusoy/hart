@@ -1,3 +1,4 @@
+import argparse
 import textwrap
 from unittest import mock
 
@@ -108,11 +109,16 @@ def test_count_batch_picks_zones_before_building_minion_ids(
     named_tempfile.close()
 
     cli = HartCLI()
-    args = mock.Mock()
-    args.config = named_tempfile.name
-    args.role = 'myrole'
-    args.region = None
-    args.provider = EC2Provider('key_id', 'secret_key')
+    args = argparse.Namespace(
+        config=named_tempfile.name,
+        role='myrole',
+        region=None,
+        provider=EC2Provider('key_id', 'secret_key'),
+        # Emulating a provider-specific argparse default, which has to be
+        # part of the specs like in the single-minion path
+        volume_type='gp2',
+        count=2,
+    )
 
     failed = cli.cli_create_minions_from_role_in_parallel(args, {}, 2)
 
@@ -121,6 +127,8 @@ def test_count_batch_picks_zones_before_building_minion_ids(
     assert [spec['zone'] for spec in specs] == ['eu-south-1a', 'eu-south-1b']
     assert [spec['minion_id'] for spec in specs] == [
         'eu-south-1a.myrole', 'eu-south-1b.myrole']
+    assert [spec['volume_type'] for spec in specs] == ['gp2', 'gp2']
+    assert all('count' not in spec for spec in specs)
 
 
 @mock.patch('hart.minions.check_existing_minion', return_value=True)
