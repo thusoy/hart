@@ -11,7 +11,7 @@ from .minions import (
     destroy_minion,
 )
 from .master import create_master
-from .parallel import create_minions_in_parallel
+from .parallel import create_and_connect_minion, create_minions_in_parallel
 from .providers import provider_map
 from .roles import get_minion_arguments_for_role, get_provider_for_role
 from .utils import log_error, log_warning
@@ -317,9 +317,25 @@ class HartCLI:
             spec = dict(base_args)
             spec.update(get_minion_arguments_for_role(
                 args.config, args.role, None, args.region, minion_cli_kwargs))
-            specs.append(spec)
+            specs.append(self.prepare_parallel_spec(spec))
 
-        return create_minions_in_parallel(specs)
+        return create_minions_in_parallel(specs, self.parallel_create_and_connect)
+
+
+    def prepare_parallel_spec(self, spec):
+        '''Hook for subclasses to modify each --count minion spec before creation.'''
+        return spec
+
+
+    def parallel_create_and_connect(self, job):
+        '''Create and connect a single --count minion. Runs in a worker thread.'''
+        create_and_connect_minion(job, post_create=self.parallel_post_create)
+
+
+    def parallel_post_create(self, hart_node):
+        '''Hook for subclasses, runs in a worker thread between the node being
+        created and salt connecting to it.'''
+        pass
 
 
     def cli_create_minion(self, args):

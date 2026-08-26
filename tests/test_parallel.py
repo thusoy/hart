@@ -4,12 +4,16 @@ import sys
 import threading
 from unittest import mock
 
+import pytest
+
 from hart.minions import check_existing_minion
 from hart.parallel import (
     STATE_CONNECTED,
     STATE_FAILED,
     STATE_RUNNING,
+    MinionCreationJob,
     ThreadOutputMultiplexer,
+    create_and_connect_minion,
     create_minions_in_parallel,
     tail_log,
 )
@@ -82,6 +86,36 @@ def test_state_transitions_are_reported(capsys):
     assert jobs_failed == []
     output = capsys.readouterr().out
     assert 'a.example.com: connected' in output
+
+
+@mock.patch('hart.parallel.connect_minion')
+@mock.patch('hart.parallel.create_node')
+def test_create_and_connect_runs_post_create_hook_before_connecting(
+        mock_create_node, mock_connect):
+    events = []
+    mock_connect.side_effect = lambda node, script: events.append('connect')
+    job = MinionCreationJob({'minion_id': 'a.example.com'}, create_and_connect_minion)
+
+    create_and_connect_minion(job, post_create=lambda node: events.append('post_create'))
+
+    assert events == ['post_create', 'connect']
+
+
+@mock.patch('hart.parallel.disconnect_minion')
+@mock.patch('hart.parallel.destroy_node')
+@mock.patch('hart.parallel.create_node')
+def test_failing_post_create_hook_destroys_the_node(
+        mock_create_node, mock_destroy, mock_disconnect):
+    job = MinionCreationJob({'minion_id': 'a.example.com'}, create_and_connect_minion)
+
+    def post_create(hart_node):
+        raise ValueError('firewall broke')
+
+    with pytest.raises(ValueError):
+        create_and_connect_minion(job, post_create=post_create)
+
+    mock_destroy.assert_called_once_with(mock_create_node.return_value)
+    mock_disconnect.assert_called_once_with('a.example.com')
 
 
 @mock.patch('hart.minions.subprocess.check_output')

@@ -104,7 +104,12 @@ class MinionCreationJob:
                 self.state = STATE_FAILED
 
 
-def create_and_connect_minion(job):
+def create_and_connect_minion(job, post_create=None):
+    '''
+    Create one minion and wait for it to connect. `post_create` is called with
+    the HartNode after the node is created but before salt connects to it, for
+    things like letting the new minion through the master's firewall.
+    '''
     kwargs = dict(job.spec)
     script = kwargs.pop('script', None)
     hart_node = create_node(non_interactive=True, **kwargs)
@@ -112,6 +117,8 @@ def create_and_connect_minion(job):
         raise ValueError('a minion with this id already exists')
     job.state = STATE_RUNNING
     try:
+        if post_create is not None:
+            post_create(hart_node)
         connect_minion(hart_node, script)
     except BaseException:
         log_error('Destroying node since it failed to connect')
