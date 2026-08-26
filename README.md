@@ -63,6 +63,17 @@ The available parameters are the same as those used by the lower-level API
 `hart create-minion`.
 
 
+## Creating multiple minions at once
+
+`hart create-minion-from-role <role> --count 3` creates several minions in
+parallel. Each minion's full creation log is written to a separate log file
+under the system temp directory, while the terminal shows each minion's state
+as it transitions from creating to running to connected, along with the last
+few lines from each minion's log if the terminal has room. Combine with
+`-z distributed` (GCE and EC2) to spread the new minions across the zones in
+the region with the fewest existing minions of the same role.
+
+
 ## The local minion store
 
 Hart keeps a local store of the minions it has created, by default at

@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 -------------------
 
 ## Added
+- New `--count` flag to `create-minion-from-role` to create several minions
+  at once. The minions are created in parallel, with each minion's full
+  creation log written to a separate file under the system temp directory
+  while the terminal shows each minion's state as it transitions from
+  creating to running to connected, along with the last few lines of each
+  minion's log if the terminal has room. Combine with `-z distributed` to
+  spread the new minions across the zones in the region.
 - The zone for new GCE and EC2 minions can now be given as `-z distributed`
   to launch the minion in the zone in the region that has the fewest minions
   of the same role, based on the local minion store (ties are broken

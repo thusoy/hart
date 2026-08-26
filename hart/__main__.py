@@ -11,10 +11,12 @@ from .minions import (
     destroy_minion,
 )
 from .master import create_master
+from .parallel import create_minions_in_parallel
 from .providers import provider_map
 from .roles import get_minion_arguments_for_role, get_provider_for_role
 from .utils import log_error, log_warning
 from .version import __version__
+from .zones import DISTRIBUTED_ZONE, pick_distributed_zones
 
 
 def main(argv=None):
@@ -130,6 +132,12 @@ class HartCLI:
     def add_create_minion_from_role_parser(self, subparsers):
         parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
         parser.add_argument('role', help='Name of the role')
+        parser.add_argument('-n', '--count', type=int, default=1,
+            help='How many minions to create. With more than one the minions '
+            'are created in parallel, writing the full logs to a file per '
+            'minion and only showing each minion\'s status in the terminal. '
+            'Combine with -z distributed to spread the minions across zones. '
+            'Default: %(default)s')
         self._add_minion_master_role_shared_arguments(parser)
         parser.set_defaults(action=self.create_cli_create_minion_from_role(parser))
         return parser
@@ -259,12 +267,43 @@ class HartCLI:
                 if val is not parser.get_default(key):
                     cli_kwargs[key] = val
 
+            count = cli_kwargs.pop('count', 1)
+            if count < 1:
+                raise UserError('--count must be at least 1')
+            if count > 1:
+                failed = self.cli_create_minions_from_role_in_parallel(
+                    args, cli_kwargs, count)
+                if failed:
+                    sys.exit(1)
+                return
+
             kwargs = get_minion_arguments_for_role(
                 args.config, args.role, args.provider, args.region, cli_kwargs)
             for key, val in kwargs.items():
                 setattr(args, key, val)
             self.cli_create_minion(args)
         return cli_create_minion_from_role
+
+
+    def cli_create_minions_from_role_in_parallel(self, args, cli_kwargs, count):
+        # Build one spec per minion. Each call generates a fresh unique
+        # minion id, and builds a separate provider instance since the
+        # underlying provider drivers aren't guaranteed to be thread-safe.
+        specs = [
+            get_minion_arguments_for_role(
+                args.config, args.role, None, args.region, dict(cli_kwargs))
+            for _ in range(count)
+        ]
+
+        if specs[0].get('zone') == DISTRIBUTED_ZONE:
+            # Pick all the zones up front so the batch spreads evenly instead
+            # of every minion picking the same least loaded zone
+            zones = pick_distributed_zones(
+                specs[0]['provider'], specs[0]['region'], [args.role], count)
+            for spec, zone in zip(specs, zones):
+                spec['zone'] = zone
+
+        return create_minions_in_parallel(specs)
 
 
     def cli_create_minion(self, args):
