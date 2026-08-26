@@ -286,22 +286,31 @@ class HartCLI:
 
 
     def cli_create_minions_from_role_in_parallel(self, args, cli_kwargs, count):
+        # Probe the merged arguments without resolving a distributed zone to
+        # see if the zones should be picked for the batch as a whole
+        probe = get_minion_arguments_for_role(
+            args.config, args.role, args.provider, args.region, dict(cli_kwargs),
+            resolve_distributed_zone=False)
+
+        per_minion_cli_kwargs = [dict(cli_kwargs) for _ in range(count)]
+        if probe.get('zone') == DISTRIBUTED_ZONE:
+            # Pick all the zones up front so the batch spreads evenly instead
+            # of every minion picking the same least loaded zone. The zones
+            # have to be known before building the minion specs since the
+            # minion ids might include the zone.
+            zones = pick_distributed_zones(
+                probe['provider'], probe['region'], [args.role], count)
+            for minion_cli_kwargs, zone in zip(per_minion_cli_kwargs, zones):
+                minion_cli_kwargs['zone'] = zone
+
         # Build one spec per minion. Each call generates a fresh unique
         # minion id, and builds a separate provider instance since the
         # underlying provider drivers aren't guaranteed to be thread-safe.
         specs = [
             get_minion_arguments_for_role(
-                args.config, args.role, None, args.region, dict(cli_kwargs))
-            for _ in range(count)
+                args.config, args.role, None, args.region, minion_cli_kwargs)
+            for minion_cli_kwargs in per_minion_cli_kwargs
         ]
-
-        if specs[0].get('zone') == DISTRIBUTED_ZONE:
-            # Pick all the zones up front so the batch spreads evenly instead
-            # of every minion picking the same least loaded zone
-            zones = pick_distributed_zones(
-                specs[0]['provider'], specs[0]['region'], [args.role], count)
-            for spec, zone in zip(specs, zones):
-                spec['zone'] = zone
 
         return create_minions_in_parallel(specs)
 

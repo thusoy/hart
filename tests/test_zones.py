@@ -1,10 +1,13 @@
+import textwrap
 from unittest import mock
 
 import pytest
 
 from hart import minion_store
+from hart.__main__ import HartCLI
 from hart.exceptions import UserError
 from hart.minions import create_node
+from hart.providers import EC2Provider
 from hart.zones import pick_distributed_zones
 
 from test_minions import build_mock_provider
@@ -82,6 +85,42 @@ def test_no_zones_fails():
 
     with pytest.raises(UserError):
         pick_distributed_zones(provider, 'us-east4', ['web'])
+
+
+@mock.patch('hart.__main__.create_minions_in_parallel', return_value=[])
+@mock.patch('hart.__main__.pick_distributed_zones',
+    return_value=['eu-south-1a', 'eu-south-1b'])
+def test_count_batch_picks_zones_before_building_minion_ids(
+        mock_pick, mock_create, named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [providers.ec2]
+        aws_access_key_id = "key_id"
+        aws_secret_access_key = "secret_key"
+
+        [roles.myrole]
+        provider = "ec2"
+
+        [roles.myrole.ec2]
+        region = "eu-south-1"
+        zone = "distributed"
+        role_naming_scheme = "{zone}.{role}"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    cli = HartCLI()
+    args = mock.Mock()
+    args.config = named_tempfile.name
+    args.role = 'myrole'
+    args.region = None
+    args.provider = EC2Provider('key_id', 'secret_key')
+
+    failed = cli.cli_create_minions_from_role_in_parallel(args, {}, 2)
+
+    assert failed == []
+    specs = mock_create.call_args[0][0]
+    assert [spec['zone'] for spec in specs] == ['eu-south-1a', 'eu-south-1b']
+    assert [spec['minion_id'] for spec in specs] == [
+        'eu-south-1a.myrole', 'eu-south-1b.myrole']
 
 
 @mock.patch('hart.minions.check_existing_minion', return_value=True)

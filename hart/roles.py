@@ -4,6 +4,7 @@ import os
 
 from .config import load_config, build_provider_from_config
 from .exceptions import UserError
+from .zones import DISTRIBUTED_ZONE, pick_distributed_zones
 
 DEFAULT_MINION_NAMING_SCHEME = '{unique_id}.{region}.{provider}.{role}'
 
@@ -22,7 +23,8 @@ def get_provider_for_role(config_file, role, region):
     return build_provider_from_config(provider_alias, config, region=region)
 
 
-def get_minion_arguments_for_role(config_file, role, provider=None, region=None, cli_kwargs=None):
+def get_minion_arguments_for_role(config_file, role, provider=None, region=None,
+        cli_kwargs=None, resolve_distributed_zone=True):
     if cli_kwargs is None:
         cli_kwargs = {}
 
@@ -56,6 +58,12 @@ def get_minion_arguments_for_role(config_file, role, provider=None, region=None,
         merged_config.pop('region', None)
 
     size = merged_config.setdefault('size', provider.default_size)
+
+    if resolve_distributed_zone and merged_config.get('zone') == DISTRIBUTED_ZONE:
+        # This has to be resolved before building the minion id below, since
+        # the naming scheme might include the zone
+        merged_config['zone'] = pick_distributed_zones(provider, region, [role])[0]
+        print('Distributing minion to zone %s' % merged_config['zone'])
 
     default_minion_config = {
         'grains': {

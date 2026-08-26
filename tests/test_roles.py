@@ -237,6 +237,41 @@ def test_use_cli_arguments_in_minion_id(named_tempfile):
     assert arguments['minion_id'] == 'us-east4-c.myrole'
 
 
+def test_distributed_zone_is_resolved_before_building_minion_id(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [roles.myrole.ec2]
+        region = "eu-south-1"
+        zone = "distributed"
+        role_naming_scheme = "{zone}.{role}"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    provider = EC2Provider('key_id', 'secret_key')
+    with mock.patch('hart.roles.pick_distributed_zones',
+            return_value=['eu-south-1c']) as mock_pick:
+        arguments = get_minion_arguments_for_role(
+            named_tempfile.name, 'myrole', provider=provider)
+
+    assert mock_pick.call_args[0][:3] == (provider, 'eu-south-1', ['myrole'])
+    assert arguments['zone'] == 'eu-south-1c'
+    assert arguments['minion_id'] == 'eu-south-1c.myrole'
+
+
+def test_distributed_zone_can_be_left_unresolved(named_tempfile):
+    named_tempfile.write(textwrap.dedent('''
+        [roles.myrole.ec2]
+        region = "eu-south-1"
+        zone = "distributed"
+    ''').encode('utf-8'))
+    named_tempfile.close()
+
+    provider = EC2Provider('key_id', 'secret_key')
+    arguments = get_minion_arguments_for_role(named_tempfile.name, 'myrole',
+        provider=provider, resolve_distributed_zone=False)
+
+    assert arguments['zone'] == 'distributed'
+
+
 def test_get_provider_from_role(named_tempfile):
     named_tempfile.write(textwrap.dedent('''
         [providers.ec2]
