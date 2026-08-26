@@ -12,6 +12,23 @@ UNRELEASED -
   `create_minion`/`create_node`/`create_master`) to create nodes without an
   external IP. These are bootstrapped over their private IP, and only reach the
   internet if their subnet has a Cloud NAT gateway.
+- A local store of the minions created by hart, by default at
+  `/var/lib/hart/minions.json` (override with the `HART_MINION_STORE`
+  environment variable). Each record holds the minion id, provider, region,
+  zone, size, roles, public and private IPs, and the node's id and name at the
+  provider. The store is plain JSON and updated atomically, so other tools
+  (like custom salt modules) can read it directly without locking or importing
+  hart. Minions are added on create and removed on destroy, including when
+  cleaning up after failed launches. Query it with the new `list-minions`
+  command (`--json` for the full records), or from python with
+  `hart.minion_store.get_minion`/`list_minions`.
+- New `import-minion` command to backfill minions created before the store
+  existed (or from another host) into the local minion store.
+
+## Changed
+- `destroy-minion` no longer needs `-P`/`--provider` (or region) if the minion
+  is in the local minion store, the provider and region it was created with
+  will be used.
 
 0.18.4 - 2026-08-06
 -------------------

@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 
+from . import minion_store
 from .config import build_provider_from_file
 from .constants import DEBIAN_VERSIONS
 from .exceptions import UserError
@@ -64,6 +65,8 @@ class HartCLI:
         destroy_minion_parser = self.add_destroy_minion_parser(subparsers)
         list_regions_parser = self.add_list_regions_parser(subparsers)
         list_sizes_parser = self.add_list_sizes_parser(subparsers)
+        self.add_list_minions_parser(subparsers)
+        self.add_import_minion_parser(subparsers)
 
         # Do an initial parse of just the provider arguments, to be able to add
         # provider-specific arguments to the full parse. If a provider is given
@@ -80,6 +83,11 @@ class HartCLI:
             elif provider_args.command == 'create-minion-from-role':
                 provider = get_provider_for_role(
                     provider_args.config, provider_args.role, provider_args.region)
+            elif provider_args.command == 'destroy-minion':
+                provider = self.get_provider_from_minion_store(provider_args)
+            elif provider_args.command == 'list-minions':
+                # The local minion store has everything we need
+                provider = None
             else:
                 raise UserError('No provider specified')
 
@@ -96,13 +104,14 @@ class HartCLI:
                 sys.exit(0)
             raise
 
-        # Add the same arguments to create-minion-from-role as create-minion
-        provider.add_create_minion_arguments(create_minion_from_role_parser)
-        provider.add_create_minion_arguments(create_minion_parser)
-        provider.add_create_minion_arguments(create_master_parser)
-        provider.add_destroy_minion_arguments(destroy_minion_parser)
-        provider.add_list_regions_arguments(list_regions_parser)
-        provider.add_list_sizes_arguments(list_sizes_parser)
+        if provider is not None:
+            # Add the same arguments to create-minion-from-role as create-minion
+            provider.add_create_minion_arguments(create_minion_from_role_parser)
+            provider.add_create_minion_arguments(create_minion_parser)
+            provider.add_create_minion_arguments(create_master_parser)
+            provider.add_destroy_minion_arguments(destroy_minion_parser)
+            provider.add_list_regions_arguments(list_regions_parser)
+            provider.add_list_sizes_arguments(list_sizes_parser)
 
         args = parser.parse_args(argv)
         args.provider = provider
@@ -201,6 +210,41 @@ class HartCLI:
         return parser
 
 
+    def add_list_minions_parser(self, subparsers):
+        parser = subparsers.add_parser('list-minions',
+            help='List minions in the local minion store')
+        parser.add_argument('-j', '--json', action='store_true',
+            help='Output the full minion records as JSON')
+
+        parser.set_defaults(action=self.cli_list_minions)
+        return parser
+
+
+    def add_import_minion_parser(self, subparsers):
+        parser = subparsers.add_parser('import-minion',
+            help='Add an existing minion to the local minion store. Use this '
+            'to backfill minions created before the store existed (or on '
+            'another host). Requires the provider (and region, if applicable) '
+            'to be specified.')
+        parser.add_argument('minion_id')
+        parser.add_argument('-z', '--zone',
+            help='The zone the minion is located in, if applicable')
+        parser.add_argument('--roles', type=lambda value: value.split(','), default=[],
+            help='The roles of the minion, comma-separated')
+
+        parser.set_defaults(action=self.cli_import_minion)
+        return parser
+
+
+    def get_provider_from_minion_store(self, provider_args):
+        minion_id = getattr(provider_args, 'minion_id', None)
+        record = minion_store.get_minion(minion_id) if minion_id else None
+        if record is None:
+            raise UserError('No provider specified and %s was not found in the '
+                'local minion store, specify the provider with -P' % minion_id)
+        return get_provider(record['provider'], provider_args.config, record.get('region'))
+
+
     def create_cli_create_minion_from_role(self, parser):
         def cli_create_minion_from_role(args):
             cli_kwargs = {}
@@ -261,6 +305,40 @@ class HartCLI:
         provider = kwargs.pop('provider')
         for location in provider.get_regions(**kwargs):
             print('%s (%s)' % (location.name, location.id))
+
+
+    def cli_list_minions(self, args):
+        minions = minion_store.list_minions()
+        if args.json:
+            print(json.dumps(minions, indent=2, sort_keys=True))
+            return
+        for minion in minions:
+            location = minion.get('zone') or minion.get('region') or 'unknown-location'
+            details = [minion['provider'], location]
+            roles = minion.get('roles')
+            if roles:
+                details.append('roles: %s' % ','.join(roles))
+            details.append('public: %s' % (', '.join(minion['public_ips']) or 'none'))
+            if minion['private_ips']:
+                details.append('private: %s' % ', '.join(minion['private_ips']))
+            print('%s (%s)' % (minion['minion_id'], '; '.join(details)))
+
+
+    def cli_import_minion(self, args):
+        provider = args.provider
+        node = provider.get_node(args.minion_id)
+        record = minion_store.build_record(
+            args.minion_id,
+            provider.alias,
+            node,
+            region=args.region,
+            zone=args.zone,
+            roles=args.roles,
+            created_at=getattr(node, 'created_at', None),
+        )
+        minion_store.add_minion(record)
+        print('Added %s to the minion store (%s)' % (
+            args.minion_id, minion_store.get_store_path()))
 
 
 def type_json(value):

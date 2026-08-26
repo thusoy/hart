@@ -9,10 +9,10 @@ import traceback
 
 import yaml
 
-from . import utils
+from . import minion_store, utils
 from .constants import DEBIAN_VERSIONS
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
-from .utils import get_private_ip, log_error
+from .utils import get_private_ip, log_error, log_warning
 
 
 def create_minion(
@@ -48,7 +48,7 @@ def create_minion(
         connect_minion(hart_node, script)
     except:
         log_error('Destroying node since it failed to connect')
-        hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
+        destroy_node(hart_node)
         disconnect_minion(minion_id)
         raise
 
@@ -139,8 +139,15 @@ def create_node(
                         public_ip, connect_ip))
                 else:
                     print('Node running at %s' % public_ip)
-            return utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
+            hart_node = utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
                 ssh_canary, extra, connect_ip)
+            save_minion_to_store(hart_node,
+                region=region,
+                zone=kwargs.get('zone'),
+                size=size,
+                minion_config=default_minion_config,
+            )
+            return hart_node
         except:
             traceback.print_exc()
             if node:
@@ -154,6 +161,7 @@ def destroy_minion(minion_id, provider, **kwargs):
     print('Destroying minion')
     node = provider.get_node(minion_id)
     provider.destroy_node(node, **kwargs)
+    remove_minion_from_store(minion_id)
 
 
 def disconnect_minion(minion_id):
@@ -167,6 +175,36 @@ def disconnect_minion(minion_id):
 
 def destroy_node(hart_node):
     hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
+    remove_minion_from_store(hart_node.minion_id)
+
+
+def save_minion_to_store(hart_node, region=None, zone=None, size=None, minion_config=None):
+    grains = (minion_config or {}).get('grains') or {}
+    provider = hart_node.provider
+    record = minion_store.build_record(
+        hart_node.minion_id,
+        provider.alias,
+        hart_node.node,
+        region=region,
+        zone=zone,
+        size=size or getattr(provider, 'default_size', None),
+        roles=grains.get('roles'),
+    )
+    # The store is bookkeeping, don't fail an otherwise successful launch if
+    # it can't be updated
+    try:
+        minion_store.add_minion(record)
+    except Exception as error:
+        log_warning('Failed to save minion to the local store (%s): %s' % (
+            minion_store.get_store_path(), error))
+
+
+def remove_minion_from_store(minion_id):
+    try:
+        minion_store.remove_minion(minion_id)
+    except Exception as error:
+        log_warning('Failed to remove minion from the local store (%s): %s' % (
+            minion_store.get_store_path(), error))
 
 
 def get_master_pubkey():

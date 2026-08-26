@@ -5,6 +5,7 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
+from .minions import destroy_node, save_minion_to_store
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 from .utils import get_private_ip
 
@@ -45,7 +46,7 @@ def create_master(
         connect_to_master(hart_node, script, authorize_key)
     except:
         sys.stderr.write('Destroying master since it failed startup\n')
-        hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
+        destroy_node(hart_node)
         raise
 
 
@@ -117,8 +118,15 @@ def create_master_node(
                         public_ip, connect_ip))
                 else:
                     print('Master running at %s' % public_ip)
-            return utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
+            hart_node = utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
                 ssh_canary, extra, connect_ip)
+            save_minion_to_store(hart_node,
+                region=region,
+                zone=kwargs.get('zone'),
+                size=size,
+                minion_config=default_minion_config,
+            )
+            return hart_node
         except:
             traceback.print_exc()
             if node:

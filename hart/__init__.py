@@ -1,3 +1,4 @@
+from . import minion_store
 from .minions import (
     create_minion,
     destroy_minion,

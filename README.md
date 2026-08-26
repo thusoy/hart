@@ -63,6 +63,37 @@ The available parameters are the same as those used by the lower-level API
 `hart create-minion`.
 
 
+## The local minion store
+
+Hart keeps a local store of the minions it has created, by default at
+`/var/lib/hart/minions.json` (override with the `HART_MINION_STORE`
+environment variable). Each record holds the minion id, provider, region,
+zone, size, roles, public and private IPs, and the id and name of the node at
+the provider (which can differ from the minion id, like on GCE where instance
+names have to be valid DNS labels).
+
+List the minions on the command line with `hart list-minions` (add `--json`
+for the full records), or from python:
+
+```python
+from hart import minion_store
+
+minion_store.get_minion('minion.example.com')
+minion_store.list_minions()
+```
+
+The store is a plain JSON document that is replaced atomically on writes, so
+other tools (like a custom salt module) can also read the file directly
+without taking any locks or importing hart.
+
+Since the store knows which provider a minion was created with,
+`hart destroy-minion <minion-id>` doesn't need `-P`/`--provider` or a region
+for minions that are in the store. Minions created before the store existed
+can be added to it with `hart import-minion -P <provider> [-R <region>]
+[-z <zone>] [--roles <roles>] <minion-id>`, which looks the node up at the
+provider and records it.
+
+
 ## Local testing
 
 Due to the nature of the project (requiring a salt master and lots of
