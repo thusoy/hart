@@ -275,14 +275,14 @@ class EC2Provider(BaseProvider):
         current_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')
         name = 'temp-for-%s-%s' % (minion_id, current_date)
 
-        # Get the external IPs for the current host to let through the firewall
+        # Get the public IPs for the current host to let through the firewall
         # to the minion for the initial ssh connection
         if connection_gateway:
-            external_ips = [connection_gateway]
+            host_public_ips = [connection_gateway]
         else:
-            external_ips = list(get_host_public_ips())
+            host_public_ips = list(get_host_public_ips())
 
-        if not external_ips:
+        if not host_public_ips:
             raise UserError('Could not find any public IPs on the current '
                 'host and thus wont be able to connect to the new node')
 
@@ -299,7 +299,7 @@ class EC2Provider(BaseProvider):
                 'IpProtocol': 'tcp',
                 'FromPort': 22,
                 'ToPort': 22,
-                'IpRanges': [{'CidrIp': ip} for ip in external_ips],
+                'IpRanges': [{'CidrIp': ip} for ip in host_public_ips],
             }]
         )
 

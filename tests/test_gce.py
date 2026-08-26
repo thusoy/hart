@@ -66,16 +66,17 @@ def create_node(provider, **kwargs):
     return provider.driver.create_node.call_args[1]
 
 
-def test_gets_ephemeral_external_ip_by_default():
+def test_gets_ephemeral_public_ip_by_default():
     provider = build_gce_provider()
 
+    # external_ip is what libcloud (and GCE) calls the public IP
     assert create_node(provider)['external_ip'] == 'ephemeral'
 
 
-def test_can_be_created_without_external_ip():
+def test_can_be_created_without_public_ip():
     provider = build_gce_provider()
 
-    assert create_node(provider, no_external_ip=True)['external_ip'] is None
+    assert create_node(provider, no_public_ip=True)['external_ip'] is None
 
 
 def test_instance_name_generation():

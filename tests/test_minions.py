@@ -51,25 +51,25 @@ def test_create_node_can_connect_via_private_ip(mock_pubkey, mock_existing):
 
 @mock.patch('hart.minions.check_existing_minion', return_value=True)
 @mock.patch('hart.minions.get_master_pubkey', return_value='master-pubkey')
-def test_create_node_without_external_ip(mock_pubkey, mock_existing):
+def test_create_node_without_public_ip(mock_pubkey, mock_existing):
     provider = build_mock_provider(public_ip=None)
 
-    hart_node = create_node('minion.example.com', provider, no_external_ip=True)
+    hart_node = create_node('minion.example.com', provider, no_public_ip=True)
 
     assert hart_node.public_ip is None
     assert hart_node.connect_ip == '10.0.0.5'
     # Waiting for an IP the node will never get would just time out
     provider.wait_for_public_ip.assert_not_called()
-    assert provider.create_node.call_args[1]['no_external_ip'] is True
+    assert provider.create_node.call_args[1]['no_public_ip'] is True
 
 
 @mock.patch('hart.minions.check_existing_minion', return_value=True)
 @mock.patch('hart.minions.get_master_pubkey', return_value='master-pubkey')
-def test_create_node_without_external_ip_needs_a_private_ip(mock_pubkey, mock_existing):
+def test_create_node_without_public_ip_needs_a_private_ip(mock_pubkey, mock_existing):
     provider = build_mock_provider(public_ip=None, private_ip=None)
 
     with pytest.raises(UserError):
-        create_node('minion.example.com', provider, no_external_ip=True)
+        create_node('minion.example.com', provider, no_public_ip=True)
 
     provider.destroy_node.assert_called_once()
 

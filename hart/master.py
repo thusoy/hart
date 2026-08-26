@@ -24,7 +24,7 @@ def create_master(
         script=None,
         authorize_key=None,
         connect_via_private_ip=False,
-        no_external_ip=False,
+        no_public_ip=False,
         **kwargs
         ):
     hart_node = create_master_node(
@@ -39,7 +39,7 @@ def create_master(
         minion_config,
         grains,
         connect_via_private_ip=connect_via_private_ip,
-        no_external_ip=no_external_ip,
+        no_public_ip=no_public_ip,
         **kwargs
     )
     try:
@@ -62,7 +62,7 @@ def create_master_node(
         minion_config=None,
         grains=None,
         connect_via_private_ip=False,
-        no_external_ip=False,
+        no_public_ip=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -102,12 +102,12 @@ def create_master_node(
                 cloud_init,
                 private_networking,
                 tags,
-                no_external_ip=no_external_ip,
+                no_public_ip=no_public_ip,
                 **kwargs)
-            if no_external_ip:
+            if no_public_ip:
                 public_ip = None
                 connect_ip = get_private_ip(node)
-                print('Master running at %s (no external IP)' % connect_ip)
+                print('Master running at %s (no public IP)' % connect_ip)
             else:
                 node = provider.wait_for_public_ip(node)
                 public_ip = node.public_ips[0]

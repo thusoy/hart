@@ -27,7 +27,7 @@ def create_minion(
         minion_config=None,
         script=None,
         connect_via_private_ip=False,
-        no_external_ip=False,
+        no_public_ip=False,
         **kwargs
         ):
     hart_node = create_node(
@@ -41,7 +41,7 @@ def create_minion(
         private_networking,
         minion_config,
         connect_via_private_ip=connect_via_private_ip,
-        no_external_ip=no_external_ip,
+        no_public_ip=no_public_ip,
         **kwargs
     )
     try:
@@ -82,7 +82,7 @@ def create_node(
         private_networking=False,
         minion_config=None,
         connect_via_private_ip=False,
-        no_external_ip=False,
+        no_public_ip=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -123,12 +123,12 @@ def create_node(
                 cloud_init,
                 private_networking,
                 tags,
-                no_external_ip=no_external_ip,
+                no_public_ip=no_public_ip,
                 **kwargs)
-            if no_external_ip:
+            if no_public_ip:
                 public_ip = None
                 connect_ip = get_private_ip(node)
-                print('Node running at %s (no external IP)' % connect_ip)
+                print('Node running at %s (no public IP)' % connect_ip)
             else:
                 node = provider.wait_for_public_ip(node)
                 public_ip = node.public_ips[0]

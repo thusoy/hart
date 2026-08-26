@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Changed
+- **Breaking:** The GCE `--no-external-ip` flag added in 0.19.0 was renamed to
+  `--no-public-ip` (and the `no_external_ip` kwarg to
+  `create_minion`/`create_node`/`create_master` to `no_public_ip`) to match
+  the public/private IP terminology used everywhere else in hart. There is no
+  backwards compatibility for the old name.
+
 0.19.0 - 2026-08-26
 -------------------
 
