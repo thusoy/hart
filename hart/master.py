@@ -5,8 +5,8 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
-from .exceptions import UserError
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
+from .utils import get_private_ip
 
 
 def create_master(
@@ -23,6 +23,7 @@ def create_master(
         script=None,
         authorize_key=None,
         connect_via_private_ip=False,
+        no_external_ip=False,
         **kwargs
         ):
     hart_node = create_master_node(
@@ -37,6 +38,7 @@ def create_master(
         minion_config,
         grains,
         connect_via_private_ip=connect_via_private_ip,
+        no_external_ip=no_external_ip,
         **kwargs
     )
     try:
@@ -59,6 +61,7 @@ def create_master_node(
         minion_config=None,
         grains=None,
         connect_via_private_ip=False,
+        no_external_ip=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -98,18 +101,22 @@ def create_master_node(
                 cloud_init,
                 private_networking,
                 tags,
+                no_external_ip=no_external_ip,
                 **kwargs)
-            node = provider.wait_for_public_ip(node)
-            public_ip = node.public_ips[0]
-            connect_ip = public_ip
-            if connect_via_private_ip:
-                if not node.private_ips:
-                    raise UserError('Cannot connect via private IP, node has none')
-                connect_ip = node.private_ips[0]
-                print('Master running at %s, connecting via private IP %s' % (
-                    public_ip, connect_ip))
+            if no_external_ip:
+                public_ip = None
+                connect_ip = get_private_ip(node)
+                print('Master running at %s (no external IP)' % connect_ip)
             else:
-                print('Master running at %s' % public_ip)
+                node = provider.wait_for_public_ip(node)
+                public_ip = node.public_ips[0]
+                connect_ip = public_ip
+                if connect_via_private_ip:
+                    connect_ip = get_private_ip(node)
+                    print('Master running at %s, connecting via private IP %s' % (
+                        public_ip, connect_ip))
+                else:
+                    print('Master running at %s' % public_ip)
             return utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
                 ssh_canary, extra, connect_ip)
         except:
@@ -138,4 +145,4 @@ def connect_to_master(hart_node, script, authorize_key=None):
             'for pubkey in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$pubkey"; done',
             log_stdout=False)
         print('Master created: %s@%s\nssh fingerprints: \n%s' % (
-            username, hart_node.public_ip, master_pubkeys))
+            username, connect_ip, master_pubkeys))

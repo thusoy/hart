@@ -114,6 +114,11 @@ class GCEProvider(BaseLibcloudProvider):
         parser.add_argument('-l', '--labels', type=split_csv_keyval,
             help='Comma-separated key=value pairs of labels to add to the node.')
         parser.add_argument('--subnet', help='The subnet to launch in.')
+        parser.add_argument('--no-external-ip', action='store_true',
+            help='Create the node without an external IP. It will then only be able '
+            'to reach the internet if its subnet has a Cloud NAT gateway, and has to '
+            'be bootstrapped from a host on its private network (see '
+            '--connect-via-private-ip).')
         parser.add_argument('--volume-size', type=int, default=10,
             help='The size of the boot drive in GB, minimum 10')
         parser.add_argument('--volume-type', default='pd-ssd',
@@ -207,6 +212,8 @@ class GCEProvider(BaseLibcloudProvider):
             ex_tags=tags,
             ex_network=subnet.network,
             ex_subnetwork=subnet,
+            # 'ephemeral' is also libcloud's default, None gives no external IP
+            external_ip=None if kwargs.get('no_external_ip') else 'ephemeral',
             ex_metadata={
                 'sshKeys': auth_key,
                 'startup-script': cloud_init,
