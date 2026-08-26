@@ -19,6 +19,7 @@ custom salt module) without importing hart. The document looks like this:
             "roles": ["consumer"],
             "public_ips": ["203.0.113.5"],
             "private_ips": ["10.0.0.5"],
+            "connect_via_private_ip": false,
             "node_id": "i-0123456789abcdef0",
             "node_name": "minion.us-east-1.ec2.consumer",
             "created_at": "2026-08-06T12:00:00+00:00"
@@ -58,6 +59,7 @@ def build_record(
         size=None,
         debian_codename=None,
         roles=None,
+        connect_via_private_ip=False,
         created_at=None,
         ):
     if created_at is None:
@@ -74,6 +76,7 @@ def build_record(
         'roles': list(roles) if roles else [],
         'public_ips': list(node.public_ips or []),
         'private_ips': list(node.private_ips or []),
+        'connect_via_private_ip': bool(connect_via_private_ip),
         'node_id': node.id,
         'node_name': node.name,
         'created_at': created_at,

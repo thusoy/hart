@@ -82,6 +82,7 @@ def test_store_is_plain_versioned_json(isolated_minion_store):
     assert record['node_name'] == 'minion.example.com'
     assert record['debian_codename'] == 'bookworm'
     assert record['roles'] == ['web']
+    assert record['connect_via_private_ip'] is False
 
 
 def test_explicit_path_overrides_default(tmp_path):
@@ -130,6 +131,23 @@ def test_create_node_saves_minion_to_store(mock_pubkey, mock_existing):
     assert record['private_ips'] == ['10.0.0.5']
     assert record['node_id'] == 'droplet-123'
     assert record['node_name'] == 'minion.example.com'
+
+
+@mock.patch('hart.minions.check_existing_minion', return_value=True)
+@mock.patch('hart.minions.get_master_pubkey', return_value='master-pubkey')
+def test_create_node_records_private_connectivity(mock_pubkey, mock_existing):
+    provider = build_mock_provider()
+    provider.alias = 'gce'
+    provider.default_size = 'n1-standard-1'
+    node = provider.create_node.return_value[0]
+    node.id = 'instance-123'
+    node.name = 'hart-minion-abc123'
+
+    create_node('minion.example.com', provider, region='us-east4',
+        connect_via_private_ip=True)
+
+    record = minion_store.get_minion('minion.example.com')
+    assert record['connect_via_private_ip'] is True
 
 
 @mock.patch('hart.minions.disconnect_minion')
@@ -222,6 +240,7 @@ def test_import_minion_adds_node_to_store():
     args.zone = None
     args.debian_codename = 'bookworm'
     args.roles = ['web']
+    args.connect_via_private_ip = True
 
     HartCLI().cli_import_minion(args)
 
@@ -231,3 +250,4 @@ def test_import_minion_adds_node_to_store():
     assert record['roles'] == ['web']
     assert record['node_id'] == 'droplet-123'
     assert record['debian_codename'] == 'bookworm'
+    assert record['connect_via_private_ip'] is True

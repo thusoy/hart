@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Added
+- Minion store records now include `connect_via_private_ip`, whether the
+  minion connects to the salt master over the private network. Set for nodes
+  created with `--connect-via-private-ip` or `--no-public-ip`, and importable
+  for existing minions with the new `--connect-via-private-ip` flag to
+  `import-minion`. Use this to only open master firewalls to the addresses
+  minions actually connect from.
+
 0.19.1 - 2026-08-26
 -------------------
 

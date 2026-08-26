@@ -147,6 +147,8 @@ def create_node(
                 size=size,
                 debian_codename=debian_codename,
                 minion_config=default_minion_config,
+                # Nodes without a public IP can also only connect privately
+                connect_via_private_ip=connect_via_private_ip or no_public_ip,
             )
             return hart_node
         except:
@@ -180,7 +182,7 @@ def destroy_node(hart_node):
 
 
 def save_minion_to_store(hart_node, region=None, zone=None, size=None,
-        debian_codename=None, minion_config=None):
+        debian_codename=None, minion_config=None, connect_via_private_ip=False):
     grains = (minion_config or {}).get('grains') or {}
     provider = hart_node.provider
     record = minion_store.build_record(
@@ -192,6 +194,7 @@ def save_minion_to_store(hart_node, region=None, zone=None, size=None,
         size=size or getattr(provider, 'default_size', None),
         debian_codename=debian_codename,
         roles=grains.get('roles'),
+        connect_via_private_ip=connect_via_private_ip,
     )
     # The store is bookkeeping, don't fail an otherwise successful launch if
     # it can't be updated

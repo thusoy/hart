@@ -234,6 +234,8 @@ class HartCLI:
             help='The debian version the minion was deployed with, if known')
         parser.add_argument('--roles', type=lambda value: value.split(','), default=[],
             help='The roles of the minion, comma-separated')
+        parser.add_argument('--connect-via-private-ip', action='store_true',
+            help='The minion connects to the salt master over the private network')
 
         parser.set_defaults(action=self.cli_import_minion)
         return parser
@@ -338,6 +340,7 @@ class HartCLI:
             zone=args.zone,
             debian_codename=args.debian_codename,
             roles=args.roles,
+            connect_via_private_ip=args.connect_via_private_ip,
             created_at=getattr(node, 'created_at', None),
         )
         minion_store.add_minion(record)

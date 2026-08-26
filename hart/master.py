@@ -126,6 +126,8 @@ def create_master_node(
                 size=size,
                 debian_codename=debian_codename,
                 minion_config=default_minion_config,
+                # Nodes without a public IP can also only connect privately
+                connect_via_private_ip=connect_via_private_ip or no_public_ip,
             )
             return hart_node
         except:

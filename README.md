@@ -69,9 +69,10 @@ Hart keeps a local store of the minions it has created, by default at
 `/var/lib/hart/minions.json` (override with the `HART_MINION_STORE`
 environment variable). Each record holds the minion id, provider, region,
 zone, size, debian codename the minion was deployed from, roles, public and
-private IPs, and the id and name of the node at the provider (which can
-differ from the minion id, like on GCE where instance names have to be valid
-DNS labels).
+private IPs, whether the minion connects to the master over the private
+network, and the id and name of the node at the provider (which can differ
+from the minion id, like on GCE where instance names have to be valid DNS
+labels).
 
 List the minions on the command line with `hart list-minions` (add `--json`
 for the full records), or from python:
@@ -91,8 +92,9 @@ Since the store knows which provider a minion was created with,
 `hart destroy-minion <minion-id>` doesn't need `-P`/`--provider` or a region
 for minions that are in the store. Minions created before the store existed
 can be added to it with `hart import-minion -P <provider> [-R <region>]
-[-z <zone>] [-d <debian-codename>] [--roles <roles>] <minion-id>`, which
-looks the node up at the provider and records it.
+[-z <zone>] [-d <debian-codename>] [--roles <roles>]
+[--connect-via-private-ip] <minion-id>`, which looks the node up at the
+provider and records it.
 
 
 ## Local testing
