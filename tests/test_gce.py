@@ -79,6 +79,28 @@ def test_can_be_created_without_public_ip():
     assert create_node(provider, no_public_ip=True)['external_ip'] is None
 
 
+def test_get_zones():
+    provider = build_gce_provider()
+    region = Mock()
+    region.name = 'us-east4'
+    zone_a = Mock()
+    zone_a.name = 'us-east4-a'
+    zone_b = Mock()
+    zone_b.name = 'us-east4-b'
+    region.zones = [zone_a, zone_b]
+    provider.driver.ex_list_regions.return_value = [region]
+
+    assert provider.get_zones('us-east4') == ['us-east4-a', 'us-east4-b']
+
+
+def test_get_zones_unknown_region():
+    provider = build_gce_provider()
+    provider.driver.ex_list_regions.return_value = []
+
+    with pytest.raises(UserError):
+        provider.get_zones('us-east4')
+
+
 def test_instance_name_generation():
     minion_id = '01.db.example.com'
     assert gce.name_from_minion_id(minion_id) == 'hart-com-example-db-01-b64faa'

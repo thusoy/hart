@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 -------------------
 
 ## Added
+- The zone for new GCE and EC2 minions can now be given as `-z distributed`
+  to launch the minion in the zone in the region that has the fewest minions
+  of the same role, based on the local minion store (ties are broken
+  randomly, so the first minion of a role gets a random zone). Make sure
+  existing minions have been backfilled with `import-minion` before relying
+  on this.
 - Minion store records now include `connect_via_private_ip`, whether the
   minion connects to the salt master over the private network. Set for nodes
   created with `--connect-via-private-ip` or `--no-public-ip`, and importable

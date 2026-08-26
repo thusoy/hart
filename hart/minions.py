@@ -13,6 +13,7 @@ from . import minion_store, utils
 from .constants import DEBIAN_VERSIONS
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 from .utils import get_private_ip, log_error, log_warning
+from .zones import DISTRIBUTED_ZONE, pick_distributed_zones
 
 
 def create_minion(
@@ -105,6 +106,11 @@ def create_node(
     })
 
     key_name = utils.build_ssh_key_name(minion_id)
+
+    if kwargs.get('zone') == DISTRIBUTED_ZONE:
+        roles = (default_minion_config.get('grains') or {}).get('roles') or []
+        kwargs['zone'] = pick_distributed_zones(provider, region, roles)[0]
+        print('Distributing minion to zone %s' % kwargs['zone'])
 
     if not check_existing_minion(minion_id):
         print('Existing minions were found and did want to overwrite, aborting')

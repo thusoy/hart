@@ -88,6 +88,13 @@ class GCEProvider(BaseLibcloudProvider):
         return regions
 
 
+    def get_zones(self, region, **kwargs):
+        for location in self.driver.ex_list_regions():
+            if location.name == region:
+                return [zone.name for zone in location.zones]
+        raise UserError('Unknown GCE region %s' % region)
+
+
     def create_remote_ssh_key(self, key_name, ssh_key, public_key):
         # Since we don't use global keys there's no item on GCE to represent the key
         return (key_name, 'root:%s hart@saltmaster' % public_key)
@@ -110,7 +117,9 @@ class GCEProvider(BaseLibcloudProvider):
                 ret[key] = value
             return ret
 
-        parser.add_argument('-z', '--zone', help='GCE zone to launch in')
+        parser.add_argument('-z', '--zone', help='GCE zone to launch in. Use '
+            "'distributed' to pick the zone in the region with the fewest "
+            'minions of the same role, based on the local minion store.')
         parser.add_argument('-l', '--labels', type=split_csv_keyval,
             help='Comma-separated key=value pairs of labels to add to the node.')
         parser.add_argument('--subnet', help='The subnet to launch in.')
