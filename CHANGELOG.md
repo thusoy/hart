@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-0.19.2 - 2026-08-26
+UNRELEASED -
 -------------------
 
 ## Added
@@ -21,6 +21,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   randomly, so the first minion of a role gets a random zone). Make sure
   existing minions have been backfilled with `import-minion` before relying
   on this.
+
+
+0.19.2 - 2026-08-26
+-------------------
+
+## Added
 - Minion store records now include `connect_via_private_ip`, whether the
   minion connects to the salt master over the private network. Set for nodes
   created with `--connect-via-private-ip` or `--no-public-ip`, and importable
