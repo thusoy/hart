@@ -144,6 +144,9 @@ including `--minion-config '{"master": "$IP"}'` when calling `create-minion`.
 Create a file `hart.toml` in the root of the repo with credentials to use for
 development.
 
+If you already have a salt master running you can install hart from a branch with
+`pip install --force-reinstall 'git+https://github.com/thusoy/hart.git@<commit>`.
+
 
 ## License
 
