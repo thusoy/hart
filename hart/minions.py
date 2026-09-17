@@ -13,6 +13,7 @@ from . import minion_store, utils
 from .constants import DEBIAN_VERSIONS
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 from .utils import get_private_ip, log_error, log_warning
+from .zones import DISTRIBUTED_ZONE, pick_distributed_zones
 
 
 def create_minion(
@@ -83,6 +84,7 @@ def create_node(
         minion_config=None,
         connect_via_private_ip=False,
         no_public_ip=False,
+        non_interactive=False,
         **kwargs
         ):
     ssh_canary = utils.create_token()
@@ -106,7 +108,12 @@ def create_node(
 
     key_name = utils.build_ssh_key_name(minion_id)
 
-    if not check_existing_minion(minion_id):
+    if kwargs.get('zone') == DISTRIBUTED_ZONE:
+        roles = (default_minion_config.get('grains') or {}).get('roles') or []
+        kwargs['zone'] = pick_distributed_zones(provider, region, roles)[0]
+        print('Distributing minion to zone %s' % kwargs['zone'])
+
+    if not check_existing_minion(minion_id, non_interactive):
         print('Existing minions were found and did want to overwrite, aborting')
         return
 
@@ -218,7 +225,7 @@ def get_master_pubkey():
         return fh.read()
 
 
-def check_existing_minion(minion_id):
+def check_existing_minion(minion_id, non_interactive=False):
     minions = json.loads(subprocess.check_output([
         'salt-key',
         '--print', minion_id,
@@ -227,6 +234,10 @@ def check_existing_minion(minion_id):
 
     existing_categories = minions.keys()
     if existing_categories:
+        if non_interactive:
+            log_error('Existing minions matching %s were found in %s, not overwriting' % (
+                minion_id, ', '.join(existing_categories)))
+            return False
         should_continue = input('Existing minions matching %s were found in %s, '
             'overwrite? [y/N]' % (minion_id, ', '.join(existing_categories)))
         return should_continue == 'y'

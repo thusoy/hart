@@ -99,7 +99,9 @@ class EC2Provider(BaseProvider):
         parser.add_argument('-t', '--tags', type=split_csv_keyval, default={},
             help='Tags to add to the new node, comma-separated list of key=value pairs.')
 
-        parser.add_argument('-z', '--zone', help='AWS availability zone')
+        parser.add_argument('-z', '--zone', help='AWS availability zone. Use '
+            "'distributed' to pick the zone in the region with the fewest "
+            'minions of the same role, based on the local minion store.')
         parser.add_argument('--subnet',
             help='AWS: The subnet to launch the node in')
         parser.add_argument('--volume-size', type=int,
@@ -423,6 +425,14 @@ class EC2Provider(BaseProvider):
 
         sizes.sort(key=lambda s: s.monthly_cost)
         return sizes
+
+
+    def get_zones(self, region, **kwargs):
+        # The boto client is already scoped to the provider region and can
+        # only see its own zones
+        response = self.ec2.describe_availability_zones()
+        return [zone['ZoneName'] for zone in response['AvailabilityZones']
+            if zone['State'] == 'available']
 
 
     def get_regions(self, include_zones=False, **kwargs):

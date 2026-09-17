@@ -130,6 +130,11 @@ class BaseProvider(abc.ABC):
         raise NotImplementedError()
 
 
+    def get_zones(self, region, **kwargs):
+        '''Return the zone names in the given region, for providers that have zones.'''
+        raise NotImplementedError()
+
+
     def get_sizes(self, **kwargs):
         raise NotImplementedError()
 

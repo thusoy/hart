@@ -11,10 +11,12 @@ from .minions import (
     destroy_minion,
 )
 from .master import create_master
+from .parallel import create_and_connect_minion, create_minions_in_parallel
 from .providers import provider_map
 from .roles import get_minion_arguments_for_role, get_provider_for_role
 from .utils import log_error, log_warning
 from .version import __version__
+from .zones import DISTRIBUTED_ZONE, pick_distributed_zones
 
 
 def main(argv=None):
@@ -130,6 +132,12 @@ class HartCLI:
     def add_create_minion_from_role_parser(self, subparsers):
         parser = subparsers.add_parser('create-minion-from-role', help='Create a new minion with a given role')
         parser.add_argument('role', help='Name of the role')
+        parser.add_argument('-n', '--count', type=int, default=1,
+            help='How many minions to create. With more than one the minions '
+            'are created in parallel, writing the full logs to a file per '
+            'minion and only showing each minion\'s status in the terminal. '
+            'Combine with -z distributed to spread the minions across zones. '
+            'Default: %(default)s')
         self._add_minion_master_role_shared_arguments(parser)
         parser.set_defaults(action=self.create_cli_create_minion_from_role(parser))
         return parser
@@ -259,12 +267,75 @@ class HartCLI:
                 if val is not parser.get_default(key):
                     cli_kwargs[key] = val
 
+            count = cli_kwargs.pop('count', 1)
+            if count < 1:
+                raise UserError('--count must be at least 1')
+            if count > 1:
+                failed = self.cli_create_minions_from_role_in_parallel(
+                    args, cli_kwargs, count)
+                if failed:
+                    sys.exit(1)
+                return
+
             kwargs = get_minion_arguments_for_role(
                 args.config, args.role, args.provider, args.region, cli_kwargs)
             for key, val in kwargs.items():
                 setattr(args, key, val)
             self.cli_create_minion(args)
         return cli_create_minion_from_role
+
+
+    def cli_create_minions_from_role_in_parallel(self, args, cli_kwargs, count):
+        # Probe the merged arguments without resolving a distributed zone to
+        # see if the zones should be picked for the batch as a whole
+        probe = get_minion_arguments_for_role(
+            args.config, args.role, args.provider, args.region, dict(cli_kwargs),
+            resolve_distributed_zone=False)
+
+        per_minion_cli_kwargs = [dict(cli_kwargs) for _ in range(count)]
+        if probe.get('zone') == DISTRIBUTED_ZONE:
+            # Pick all the zones up front so the batch spreads evenly instead
+            # of every minion picking the same least loaded zone. The zones
+            # have to be known before building the minion specs since the
+            # minion ids might include the zone.
+            zones = pick_distributed_zones(
+                probe['provider'], probe['region'], [args.role], count)
+            for minion_cli_kwargs, zone in zip(per_minion_cli_kwargs, zones):
+                minion_cli_kwargs['zone'] = zone
+
+        # Build one spec per minion. Each call generates a fresh unique
+        # minion id, and builds a separate provider instance since the
+        # underlying provider drivers aren't guaranteed to be thread-safe.
+        # Mirroring the single-minion path, the merged role arguments are
+        # applied on top of the full argument namespace so that
+        # provider-specific argument defaults (like the GCE volume type) are
+        # part of the spec.
+        base_args = dict(vars(args))
+        base_args.pop('count', None)
+        specs = []
+        for minion_cli_kwargs in per_minion_cli_kwargs:
+            spec = dict(base_args)
+            spec.update(get_minion_arguments_for_role(
+                args.config, args.role, None, args.region, minion_cli_kwargs))
+            specs.append(self.prepare_parallel_spec(spec))
+
+        return create_minions_in_parallel(specs, self.parallel_create_and_connect)
+
+
+    def prepare_parallel_spec(self, spec):
+        '''Hook for subclasses to modify each --count minion spec before creation.'''
+        return spec
+
+
+    def parallel_create_and_connect(self, job):
+        '''Create and connect a single --count minion. Runs in a worker thread.'''
+        create_and_connect_minion(job, post_create=self.parallel_post_create)
+
+
+    def parallel_post_create(self, hart_node):
+        '''Hook for subclasses, runs in a worker thread between the node being
+        created and salt connecting to it.'''
+        pass
 
 
     def cli_create_minion(self, args):
