@@ -1,5 +1,6 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
+from libcloud.common import google
 import pytest
 
 from hart.exceptions import UserError
@@ -43,6 +44,50 @@ def test_get_selected_or_default_subnet_none_matching():
     second.name = 'second'
     with pytest.raises(UserError):
         gce.get_selected_or_default_subnet([first, second], 'third')
+
+
+def test_authenticates_with_service_account_key():
+    with patch.object(gce, 'get_driver') as get_driver:
+        gce.GCEProvider(user_id='hart@example.iam.gserviceaccount.com',
+            key='private-key', project='example')
+
+    get_driver.return_value.assert_called_once_with(
+        user_id='hart@example.iam.gserviceaccount.com', key='private-key',
+        project='example', auth_type='SA')
+
+
+def test_authenticates_with_vm_identity_without_key():
+    with patch.object(gce, 'get_driver') as get_driver:
+        gce.GCEProvider(project='example')
+
+    kwargs = get_driver.return_value.call_args[1]
+    assert kwargs['auth_type'] == 'GCE'
+    assert kwargs['project'] == 'example'
+
+
+def test_vm_identity_gets_token_from_metadata_server(tmp_path, monkeypatch):
+    # Builds a real libcloud driver, to catch arguments libcloud rejects
+    monkeypatch.setenv('HOME', str(tmp_path))
+    paths = []
+    def get_metadata(path='', retry_failed=None):
+        paths.append(path)
+        return 200, '', '{"access_token": "token", "expires_in": 3599}'
+    monkeypatch.setattr(google, '_get_gce_metadata', get_metadata)
+
+    provider = gce.GCEProvider(project='example')
+
+    assert provider.driver.connection.oauth2_credential.access_token == 'token'
+    assert paths == ['/instance/service-accounts/default/token']
+
+
+@pytest.mark.parametrize('credentials', [
+    {'user_id': 'hart@example.iam.gserviceaccount.com'},
+    {'key': 'private-key'},
+])
+def test_rejects_partial_service_account_credentials(credentials):
+    with patch.object(gce, 'get_driver'):
+        with pytest.raises(UserError):
+            gce.GCEProvider(project='example', **credentials)
 
 
 def build_gce_provider():

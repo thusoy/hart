@@ -46,9 +46,20 @@ class GCEProvider(BaseLibcloudProvider):
     alias = 'gce'
     default_size = 'n1-standard-1'
 
-    def __init__(self, user_id, key, project, region=None, **kwargs):
+    def __init__(self, project, user_id=None, key=None, region=None, **kwargs):
         constructor = get_driver(Provider.GCE)
-        self.driver = constructor(user_id=user_id, key=key, project=project, auth_type='SA')
+        if user_id and key:
+            self.driver = constructor(user_id=user_id, key=key, project=project,
+                auth_type='SA')
+        elif user_id or key:
+            raise UserError('GCE needs both user_id and key to use a service account '
+                'key, or neither to use the identity of the VM hart runs on')
+        else:
+            # Tokens come from the metadata server. libcloud only uses user_id
+            # to name the file it caches the token in, and key is unused but
+            # can't be None, as that shifts libcloud's positional arguments.
+            self.driver = constructor(user_id='vm-identity', key='', project=project,
+                auth_type='GCE')
         self.region = region
 
 

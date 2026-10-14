@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Added
+- GCE can authenticate as the service account of the VM hart runs on, through
+  the metadata server, by leaving `user_id` and `key` out of the provider
+  config. No service account key is needed.
+
+
 0.21.0 - 2026-09-17
 -------------------
 
