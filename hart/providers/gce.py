@@ -152,6 +152,13 @@ class GCEProvider(BaseLibcloudProvider):
                 'hyperdisk-throughput',
                 'hyperdisk-ml',
             ))
+        parser.add_argument('--service-account',
+            help="Email of the service account the node runs as. Default: the "
+            "project's default compute service account.")
+        parser.add_argument('--scopes', type=lambda s: s.split(','),
+            help='Comma-separated OAuth scopes for the service account, as full '
+            "URLs or short names like 'cloud-platform'. Default: logging.write "
+            'and monitoring.write.')
         parser.add_argument('--enable-oslogin', action='store_true',
             help='By default OS Login is disabled, pass this flag to enable it for this minion')
         parser.add_argument('--local-ssds', type=int, default=0,
@@ -219,10 +226,16 @@ class GCEProvider(BaseLibcloudProvider):
         # shouldn't be used for authing to anything, since it's easily available
         # to any process running on the machine. The only thing we grant it access
         # to is metrics and logging, to simplify collecting basic ops data.
-        oauth_scopes = [
-            "https://www.googleapis.com/auth/logging.write",
-            "https://www.googleapis.com/auth/monitoring.write",
-        ]
+        # Roles that need more (like a saltmaster managing other nodes) run as
+        # their own service account instead.
+        service_account = {
+            'scopes': kwargs.get('scopes') or [
+                "https://www.googleapis.com/auth/logging.write",
+                "https://www.googleapis.com/auth/monitoring.write",
+            ],
+        }
+        if kwargs.get('service_account'):
+            service_account['email'] = kwargs['service_account']
         node = self.driver.create_node(
             name=name_from_minion_id(minion_id),
             size=size,
@@ -244,7 +257,7 @@ class GCEProvider(BaseLibcloudProvider):
             },
             ex_labels=kwargs.get('labels'),
             ex_disks_gce_struct=disks,
-            ex_service_accounts=[{"scopes": oauth_scopes}]
+            ex_service_accounts=[service_account]
         )
         return node, None
 

@@ -12,6 +12,9 @@ UNRELEASED -
 - GCE can authenticate as the service account of the VM hart runs on, through
   the metadata server, by leaving `user_id` and `key` out of the provider
   config. No service account key is needed.
+- `--service-account` and `--scopes` for GCE minions, to run a minion as its
+  own service account (like a saltmaster that runs hart) instead of the
+  default compute service account with logging and monitoring scopes.
 
 
 0.21.0 - 2026-09-17

@@ -1,3 +1,4 @@
+import argparse
 from unittest.mock import MagicMock, Mock, patch
 
 from libcloud.common import google
@@ -122,6 +123,42 @@ def test_can_be_created_without_public_ip():
     provider = build_gce_provider()
 
     assert create_node(provider, no_public_ip=True)['external_ip'] is None
+
+
+def test_uses_default_service_account_with_ops_scopes_by_default():
+    provider = build_gce_provider()
+
+    assert create_node(provider)['ex_service_accounts'] == [{
+        'scopes': [
+            'https://www.googleapis.com/auth/logging.write',
+            'https://www.googleapis.com/auth/monitoring.write',
+        ],
+    }]
+
+
+def test_can_be_created_with_service_account_and_scopes():
+    provider = build_gce_provider()
+
+    service_accounts = create_node(provider,
+        service_account='saltmaster@example.iam.gserviceaccount.com',
+        scopes=['cloud-platform'])['ex_service_accounts']
+
+    assert service_accounts == [{
+        'email': 'saltmaster@example.iam.gserviceaccount.com',
+        'scopes': ['cloud-platform'],
+    }]
+
+
+def test_parses_service_account_and_scopes_arguments():
+    provider = build_gce_provider()
+    parser = argparse.ArgumentParser()
+    provider.add_create_minion_arguments(parser)
+
+    args = parser.parse_args(['--service-account', 'sa@example.com',
+        '--scopes', 'cloud-platform,logging.write'])
+
+    assert args.service_account == 'sa@example.com'
+    assert args.scopes == ['cloud-platform', 'logging.write']
 
 
 def test_get_zones():
