@@ -27,6 +27,21 @@ token = "<vultr api token>"
 
 Only providers you're planning to use are required.
 
+On GCE, `user_id` and `key` can be left out when hart runs on a GCE VM. Hart
+then authenticates as the VM's service account, through the metadata server,
+and needs no key. The VM needs the `cloud-platform` scope (or `compute`), and
+its service account needs the IAM roles for managing instances. Create such a
+VM with `--service-account` and `--scopes`, for example in the role config:
+
+```toml
+[roles.saltmaster.gce]
+service_account = "saltmaster@<project>.iam.gserviceaccount.com"
+scopes = ["cloud-platform"]
+```
+
+Other minions keep the default: the project's default compute service account
+with only the logging and monitoring scopes.
+
 
 ## Configure roles
 

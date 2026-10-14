@@ -1,5 +1,7 @@
-from unittest.mock import MagicMock, Mock
+import argparse
+from unittest.mock import MagicMock, Mock, patch
 
+from libcloud.common import google
 import pytest
 
 from hart.exceptions import UserError
@@ -45,6 +47,50 @@ def test_get_selected_or_default_subnet_none_matching():
         gce.get_selected_or_default_subnet([first, second], 'third')
 
 
+def test_authenticates_with_service_account_key():
+    with patch.object(gce, 'get_driver') as get_driver:
+        gce.GCEProvider(user_id='hart@example.iam.gserviceaccount.com',
+            key='private-key', project='example')
+
+    get_driver.return_value.assert_called_once_with(
+        user_id='hart@example.iam.gserviceaccount.com', key='private-key',
+        project='example', auth_type='SA')
+
+
+def test_authenticates_with_vm_identity_without_key():
+    with patch.object(gce, 'get_driver') as get_driver:
+        gce.GCEProvider(project='example')
+
+    kwargs = get_driver.return_value.call_args[1]
+    assert kwargs['auth_type'] == 'GCE'
+    assert kwargs['project'] == 'example'
+
+
+def test_vm_identity_gets_token_from_metadata_server(tmp_path, monkeypatch):
+    # Builds a real libcloud driver, to catch arguments libcloud rejects
+    monkeypatch.setenv('HOME', str(tmp_path))
+    paths = []
+    def get_metadata(path='', retry_failed=None):
+        paths.append(path)
+        return 200, '', '{"access_token": "token", "expires_in": 3599}'
+    monkeypatch.setattr(google, '_get_gce_metadata', get_metadata)
+
+    provider = gce.GCEProvider(project='example')
+
+    assert provider.driver.connection.oauth2_credential.access_token == 'token'
+    assert paths == ['/instance/service-accounts/default/token']
+
+
+@pytest.mark.parametrize('credentials', [
+    {'user_id': 'hart@example.iam.gserviceaccount.com'},
+    {'key': 'private-key'},
+])
+def test_rejects_partial_service_account_credentials(credentials):
+    with patch.object(gce, 'get_driver'):
+        with pytest.raises(UserError):
+            gce.GCEProvider(project='example', **credentials)
+
+
 def build_gce_provider():
     provider = gce.GCEProvider.__new__(gce.GCEProvider)
     # MagicMock to let the driver's image and disk types be subscripted
@@ -77,6 +123,42 @@ def test_can_be_created_without_public_ip():
     provider = build_gce_provider()
 
     assert create_node(provider, no_public_ip=True)['external_ip'] is None
+
+
+def test_uses_default_service_account_with_ops_scopes_by_default():
+    provider = build_gce_provider()
+
+    assert create_node(provider)['ex_service_accounts'] == [{
+        'scopes': [
+            'https://www.googleapis.com/auth/logging.write',
+            'https://www.googleapis.com/auth/monitoring.write',
+        ],
+    }]
+
+
+def test_can_be_created_with_service_account_and_scopes():
+    provider = build_gce_provider()
+
+    service_accounts = create_node(provider,
+        service_account='saltmaster@example.iam.gserviceaccount.com',
+        scopes=['cloud-platform'])['ex_service_accounts']
+
+    assert service_accounts == [{
+        'email': 'saltmaster@example.iam.gserviceaccount.com',
+        'scopes': ['cloud-platform'],
+    }]
+
+
+def test_parses_service_account_and_scopes_arguments():
+    provider = build_gce_provider()
+    parser = argparse.ArgumentParser()
+    provider.add_create_minion_arguments(parser)
+
+    args = parser.parse_args(['--service-account', 'sa@example.com',
+        '--scopes', 'cloud-platform,logging.write'])
+
+    assert args.service_account == 'sa@example.com'
+    assert args.scopes == ['cloud-platform', 'logging.write']
 
 
 def test_get_zones():
