@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+UNRELEASED -
+-------------------
+
+## Changed
+- Stop adding `user: salt` to the master minion config by default. This does not impact
+  the user statement in the master config.
+
 
 0.22.0 - 2026-10-14
 -------------------
