@@ -47,6 +47,20 @@ To keep the same addresses across rebuilds, reserve them in GCE and pass their
 names with `--public-address` and `--private-address`. A reserved address can
 only be attached to one node at a time, so destroy the old node first.
 
+`--shielded` creates a Shielded VM with secure boot, vTPM and integrity
+monitoring enabled. `--confidential-type SEV` or `SEV_SNP` creates a
+Confidential VM, which needs a machine type in a family that supports the
+technology and an image that lists it in its guest OS features (Debian 13 has
+both). SEV-SNP and SEV on families other than N2D and C3D stop the node for
+host maintenance instead of live migrating it. Both can also be set in the
+config, for one role or under `[hart]` for every role:
+
+```toml
+[hart]
+shielded = true
+confidential_type = "SEV"
+```
+
 
 ## Configure roles
 

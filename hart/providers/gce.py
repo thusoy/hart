@@ -9,6 +9,11 @@ from .libcloud import BaseLibcloudProvider
 from ..constants import DEBIAN_VERSIONS
 from ..exceptions import UserError
 
+# Machine families that live-migrate under AMD SEV, per Google's supported
+# configurations for Confidential VM. Everything else has to stop for host
+# maintenance.
+SEV_LIVE_MIGRATION_FAMILIES = ('n2d', 'c3d')
+
 # Haven't found a way to get pretty location names from the API yet, thus
 # hardcoding these where we know them
 region_pretty_names = {
@@ -148,6 +153,19 @@ class GCEProvider(BaseLibcloudProvider):
             help='Name of a reserved internal address in the subnet to use as '
             'the private IP, instead of one picked from the subnet. The address '
             'must not be in use by another node.')
+        parser.add_argument('--shielded', action='store_true',
+            help='Create a Shielded VM with secure boot, vTPM and integrity '
+            'monitoring all enabled. GCE enables the latter two by default, this '
+            'pins all three.')
+        parser.add_argument('--confidential-type', choices=('SEV', 'SEV_SNP'),
+            help='Create a Confidential VM with this technology. Needs a machine '
+            'type in a family that supports it and an image that lists it in its '
+            'guest OS features. SEV_SNP sets the minimum CPU platform to AMD '
+            'Milan. The node stops for host maintenance unless the family '
+            'supports live migration under SEV (%s).' % ', '.join(
+                SEV_LIVE_MIGRATION_FAMILIES))
+        parser.add_argument('--min-cpu-platform',
+            help='Minimum CPU platform for the node, f.ex "AMD Turin".')
         parser.add_argument('--volume-size', type=int, default=10,
             help='The size of the boot drive in GB, minimum 10')
         parser.add_argument('--volume-type', default='pd-ssd',
@@ -225,7 +243,7 @@ class GCEProvider(BaseLibcloudProvider):
             internal_ip = self.get_reserved_address(private_address, region)
         else:
             internal_ip = None
-        disks = [{
+        boot_disk = {
             'autoDelete': True,
             'boot': True,
             'type': 'PERSISTENT', # The boot drive has to be persistent
@@ -235,7 +253,38 @@ class GCEProvider(BaseLibcloudProvider):
                 'diskType': disk_type.extra['selfLink'],
                 'sourceImage': image.extra['selfLink']
             }
-        }]
+        }
+        # Fields libcloud's create_node doesn't know about, added to the
+        # instance it builds below
+        instance_extras = {}
+        if kwargs.get('shielded'):
+            instance_extras['shieldedInstanceConfig'] = {
+                'enableSecureBoot': True,
+                'enableVtpm': True,
+                'enableIntegrityMonitoring': True,
+            }
+        min_cpu_platform = kwargs.get('min_cpu_platform')
+        on_host_maintenance = None
+        confidential_type = kwargs.get('confidential_type')
+        if confidential_type:
+            check_image_supports_confidential_type(image, confidential_type)
+            instance_extras['confidentialInstanceConfig'] = {
+                'confidentialInstanceType': confidential_type,
+            }
+            # Confidential VMs only support NVMe disks
+            boot_disk['interface'] = 'NVME'
+            family = size.split('-')[0]
+            if confidential_type == 'SEV' and family in SEV_LIVE_MIGRATION_FAMILIES:
+                on_host_maintenance = 'MIGRATE'
+            else:
+                on_host_maintenance = 'TERMINATE'
+            if confidential_type == 'SEV_SNP':
+                # Only Milan supports SNP, and the N2D family can also land
+                # on Rome
+                min_cpu_platform = min_cpu_platform or 'AMD Milan'
+        if min_cpu_platform:
+            instance_extras['minCpuPlatform'] = min_cpu_platform
+        disks = [boot_disk]
         local_ssd = kwargs.get('local_ssds', 0)
         for i in range(local_ssd):
             disks.append({
@@ -260,20 +309,24 @@ class GCEProvider(BaseLibcloudProvider):
         }
         if kwargs.get('service_account'):
             service_account['email'] = kwargs['service_account']
-        node = self.driver.create_node(
-            name=name_from_minion_id(minion_id),
-            size=size,
-            location=zone,
-            image=None, # Specified in the disk params
+        # This is what libcloud's create_node does, split up to get at the
+        # instance before it's posted, since libcloud has no arguments for the
+        # shielded and confidential settings
+        name = name_from_minion_id(minion_id)
+        request, instance = self.driver._create_node_req(
+            name,
+            self.driver.ex_get_size(size, zone),
+            None, # Image is specified in the disk params
+            zone,
             description=minion_id,
-            ex_tags=tags,
-            ex_network=subnet.network,
+            tags=tags,
+            network=subnet.network,
             ex_subnetwork=subnet,
             # None gives no public (external, in GCE terms) IP, and for the
             # private (internal) IP it means one picked from the subnet
             external_ip=external_ip,
             internal_ip=internal_ip,
-            ex_metadata={
+            metadata={
                 'sshKeys': auth_key,
                 'startup-script': cloud_init,
                 # We assume that if you manage servers with salt you want to use salt to
@@ -282,8 +335,12 @@ class GCEProvider(BaseLibcloudProvider):
             },
             ex_labels=kwargs.get('labels'),
             ex_disks_gce_struct=disks,
-            ex_service_accounts=[service_account]
+            ex_service_accounts=[service_account],
+            ex_on_host_maintenance=on_host_maintenance,
         )
+        instance.update(instance_extras)
+        self.driver.connection.async_request(request, method='POST', data=instance)
+        node = self.driver.ex_get_node(name, zone.name)
         return node, None
 
 
@@ -339,6 +396,14 @@ def name_from_minion_id(minion_id):
     sanitized_name = '-'.join(reversed(minion_id.split('.')))
     hashed_id = hashlib.sha256(minion_id.encode('utf-8')).hexdigest()
     return 'hart-%s-%s' % (sanitized_name[:47], hashed_id[:6])
+
+
+def check_image_supports_confidential_type(image, confidential_type):
+    features = [feature['type'] for feature in image.extra.get('guestOsFeatures', [])]
+    required_feature = '%s_CAPABLE' % confidential_type
+    if required_feature not in features:
+        raise UserError('Image %s does not support %s, it lacks the %s guest OS '
+            'feature' % (image.name, confidential_type, required_feature))
 
 
 def get_selected_or_default_subnet(subnets, subnet_string):

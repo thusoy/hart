@@ -91,7 +91,7 @@ def test_rejects_partial_service_account_credentials(credentials):
             gce.GCEProvider(project='example', **credentials)
 
 
-def build_gce_provider():
+def build_gce_provider(guest_os_features=('SEV_CAPABLE', 'SEV_SNP_CAPABLE')):
     provider = gce.GCEProvider.__new__(gce.GCEProvider)
     # MagicMock to let the driver's image and disk types be subscripted
     provider.driver = MagicMock()
@@ -99,6 +99,14 @@ def build_gce_provider():
     subnet = Mock()
     subnet.name = 'us-east4'
     provider.driver.ex_list_subnetworks.return_value = [subnet]
+    image = Mock()
+    image.extra = {
+        'selfLink': 'projects/debian-cloud/global/images/debian-13-trixie-v1',
+        'guestOsFeatures': [{'type': feature} for feature in guest_os_features],
+    }
+    provider.driver.ex_get_image.return_value = image
+    provider.driver._create_node_req.return_value = (
+        '/zones/us-east4-a/instances', {'name': '01-db-example-com'})
     return provider
 
 
@@ -107,9 +115,124 @@ def create_node(provider, **kwargs):
     kwargs.setdefault('volume_size', 10)
     kwargs.setdefault('volume_type', 'pd-ssd')
     auth_key = Mock()
-    provider.create_node('01.db.example.com', 'us-east4', 'bookworm', auth_key,
+    provider.create_node('01.db.example.com', 'us-east4', 'trixie', auth_key,
         'cloud-init', False, ['db'], **kwargs)
-    return provider.driver.create_node.call_args[1]
+    return provider.driver._create_node_req.call_args[1]
+
+
+def posted_instance(provider):
+    return provider.driver.connection.async_request.call_args[1]['data']
+
+
+def test_posts_the_built_instance_and_returns_the_node():
+    provider = build_gce_provider()
+
+    create_node(provider)
+
+    provider.driver.connection.async_request.assert_called_once_with(
+        '/zones/us-east4-a/instances', method='POST',
+        data=posted_instance(provider))
+    provider.driver.ex_get_node.assert_called_once_with(
+        gce.name_from_minion_id('01.db.example.com'),
+        provider.driver.ex_get_zone.return_value.name)
+
+
+def test_is_neither_shielded_nor_confidential_by_default():
+    provider = build_gce_provider()
+
+    kwargs = create_node(provider)
+    instance = posted_instance(provider)
+
+    assert 'shieldedInstanceConfig' not in instance
+    assert 'confidentialInstanceConfig' not in instance
+    assert 'minCpuPlatform' not in instance
+    assert kwargs['ex_on_host_maintenance'] is None
+    assert 'interface' not in kwargs['ex_disks_gce_struct'][0]
+
+
+def test_shielded_enables_all_shielded_vm_options():
+    provider = build_gce_provider()
+
+    create_node(provider, shielded=True)
+
+    assert posted_instance(provider)['shieldedInstanceConfig'] == {
+        'enableSecureBoot': True,
+        'enableVtpm': True,
+        'enableIntegrityMonitoring': True,
+    }
+
+
+def test_confidential_sev_live_migrates_on_n2d():
+    provider = build_gce_provider()
+
+    kwargs = create_node(provider, size='n2d-standard-4', confidential_type='SEV')
+
+    instance = posted_instance(provider)
+    assert instance['confidentialInstanceConfig'] == {'confidentialInstanceType': 'SEV'}
+    assert 'minCpuPlatform' not in instance
+    assert kwargs['ex_on_host_maintenance'] == 'MIGRATE'
+    # Confidential VMs only support NVMe disks
+    assert kwargs['ex_disks_gce_struct'][0]['interface'] == 'NVME'
+
+
+def test_confidential_sev_terminates_on_maintenance_on_c4d():
+    provider = build_gce_provider()
+
+    kwargs = create_node(provider, size='c4d-standard-4', confidential_type='SEV')
+
+    assert kwargs['ex_on_host_maintenance'] == 'TERMINATE'
+
+
+def test_confidential_sev_snp_needs_milan_and_terminates_on_maintenance():
+    provider = build_gce_provider()
+
+    kwargs = create_node(provider, size='n2d-standard-4',
+        confidential_type='SEV_SNP')
+
+    instance = posted_instance(provider)
+    assert instance['confidentialInstanceConfig'] == {
+        'confidentialInstanceType': 'SEV_SNP'}
+    assert instance['minCpuPlatform'] == 'AMD Milan'
+    assert kwargs['ex_on_host_maintenance'] == 'TERMINATE'
+
+
+def test_rejects_confidential_type_the_image_does_not_support():
+    provider = build_gce_provider(guest_os_features=('SEV_CAPABLE',))
+
+    with pytest.raises(UserError):
+        create_node(provider, size='n2d-standard-4', confidential_type='SEV_SNP')
+
+    provider.driver.connection.async_request.assert_not_called()
+
+
+def test_explicit_min_cpu_platform():
+    provider = build_gce_provider()
+
+    create_node(provider, min_cpu_platform='AMD Turin')
+
+    assert posted_instance(provider)['minCpuPlatform'] == 'AMD Turin'
+
+
+def test_parses_shielded_and_confidential_arguments():
+    provider = build_gce_provider()
+    parser = argparse.ArgumentParser()
+    provider.add_create_minion_arguments(parser)
+
+    args = parser.parse_args(['--shielded', '--confidential-type', 'SEV_SNP',
+        '--min-cpu-platform', 'AMD Milan'])
+
+    assert args.shielded is True
+    assert args.confidential_type == 'SEV_SNP'
+    assert args.min_cpu_platform == 'AMD Milan'
+
+
+def test_only_offers_confidential_types_debian_supports():
+    provider = build_gce_provider()
+    parser = argparse.ArgumentParser()
+    provider.add_create_minion_arguments(parser)
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(['--confidential-type', 'TDX'])
 
 
 def test_gets_ephemeral_public_ip_by_default():

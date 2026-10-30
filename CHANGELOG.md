@@ -12,6 +12,15 @@ UNRELEASED -
   addresses by name instead of getting an ephemeral public IP and a private IP
   picked from the subnet. Lets a node that others find by IP, like a saltmaster,
   keep its addresses when it is rebuilt.
+- `--shielded` for GCE nodes, to create a Shielded VM with secure boot, vTPM
+  and integrity monitoring all enabled.
+- `--confidential-type` for GCE nodes, to create a Confidential VM with AMD
+  SEV or SEV-SNP. Hart checks that the image supports the type, puts the boot
+  disk on NVMe, sets the minimum CPU platform to AMD Milan for SEV-SNP, and
+  only keeps live migration for SEV on the families that support it (N2D and
+  C3D), stopping the node for host maintenance otherwise. `--min-cpu-platform`
+  sets the platform explicitly. Both work as `shielded = true` and
+  `confidential_type = "SEV"` in the config, for a role or for all of them.
 
 ## Changed
 - Stop adding `user: salt` to the master minion config by default. This does not impact
