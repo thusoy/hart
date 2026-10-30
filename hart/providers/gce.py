@@ -160,8 +160,8 @@ class GCEProvider(BaseLibcloudProvider):
         parser.add_argument('--confidential-type', choices=('SEV', 'SEV_SNP'),
             help='Create a Confidential VM with this technology. Needs a machine '
             'type in a family that supports it and an image that lists it in its '
-            'guest OS features. SEV_SNP sets the minimum CPU platform to AMD '
-            'Milan. The node stops for host maintenance unless the family '
+            'guest OS features. SEV_SNP on N2D sets the minimum CPU platform to '
+            'AMD Milan. The node stops for host maintenance unless the family '
             'supports live migration under SEV (%s).' % ', '.join(
                 SEV_LIVE_MIGRATION_FAMILIES))
         parser.add_argument('--min-cpu-platform',
@@ -278,9 +278,9 @@ class GCEProvider(BaseLibcloudProvider):
                 on_host_maintenance = 'MIGRATE'
             else:
                 on_host_maintenance = 'TERMINATE'
-            if confidential_type == 'SEV_SNP':
-                # Only Milan supports SNP, and the N2D family can also land
-                # on Rome
+            if confidential_type == 'SEV_SNP' and family == 'n2d':
+                # N2D can land on Rome, which has no SNP. Other families have
+                # a single CPU platform, and reject platforms they don't have.
                 min_cpu_platform = min_cpu_platform or 'AMD Milan'
         if min_cpu_platform:
             instance_extras['minCpuPlatform'] = min_cpu_platform

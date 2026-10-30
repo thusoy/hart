@@ -16,7 +16,7 @@ UNRELEASED -
   and integrity monitoring all enabled.
 - `--confidential-type` for GCE nodes, to create a Confidential VM with AMD
   SEV or SEV-SNP. Hart checks that the image supports the type, puts the boot
-  disk on NVMe, sets the minimum CPU platform to AMD Milan for SEV-SNP, and
+  disk on NVMe, sets the minimum CPU platform to AMD Milan for SEV-SNP on N2D, and
   only keeps live migration for SEV on the families that support it (N2D and
   C3D), stopping the node for host maintenance otherwise. `--min-cpu-platform`
   sets the platform explicitly. Both work as `shielded = true` and

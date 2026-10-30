@@ -196,6 +196,14 @@ def test_confidential_sev_snp_needs_milan_and_terminates_on_maintenance():
     assert kwargs['ex_on_host_maintenance'] == 'TERMINATE'
 
 
+def test_confidential_sev_snp_leaves_cpu_platform_to_single_platform_families():
+    provider = build_gce_provider()
+
+    create_node(provider, size='c4d-standard-4', confidential_type='SEV_SNP')
+
+    assert 'minCpuPlatform' not in posted_instance(provider)
+
+
 def test_rejects_confidential_type_the_image_does_not_support():
     provider = build_gce_provider(guest_os_features=('SEV_CAPABLE',))
 
