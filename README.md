@@ -42,6 +42,11 @@ scopes = ["cloud-platform"]
 Other minions keep the default: the project's default compute service account
 with only the logging and monitoring scopes.
 
+A GCE node gets an ephemeral public IP and a private IP picked from its subnet.
+To keep the same addresses across rebuilds, reserve them in GCE and pass their
+names with `--public-address` and `--private-address`. A reserved address can
+only be attached to one node at a time, so destroy the old node first.
+
 
 ## Configure roles
 

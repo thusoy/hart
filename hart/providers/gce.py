@@ -1,5 +1,6 @@
 import hashlib
 
+from libcloud.common.google import ResourceNotFoundError
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
@@ -139,6 +140,14 @@ class GCEProvider(BaseLibcloudProvider):
             'IP). It will then only be able to reach the internet if its subnet has '
             'a Cloud NAT gateway, and has to be bootstrapped from a host on its '
             'private network (see --connect-via-private-ip).')
+        parser.add_argument('--public-address',
+            help='Name of a reserved external address in the region to use as '
+            'the public IP, instead of an ephemeral one. The address must not be '
+            'in use by another node.')
+        parser.add_argument('--private-address',
+            help='Name of a reserved internal address in the subnet to use as '
+            'the private IP, instead of one picked from the subnet. The address '
+            'must not be in use by another node.')
         parser.add_argument('--volume-size', type=int, default=10,
             help='The size of the boot drive in GB, minimum 10')
         parser.add_argument('--volume-type', default='pd-ssd',
@@ -201,6 +210,21 @@ class GCEProvider(BaseLibcloudProvider):
         disk_type = self.driver.ex_get_disktype(volume_type, zone=zone)
         regional_subnets = self.driver.ex_list_subnetworks(region)
         subnet = get_selected_or_default_subnet(regional_subnets, subnet_string)
+        public_address = kwargs.get('public_address')
+        if public_address and kwargs.get('no_public_ip'):
+            raise UserError('--public-address and --no-public-ip are mutually exclusive')
+        if public_address:
+            external_ip = self.get_reserved_address(public_address, region)
+        elif kwargs.get('no_public_ip'):
+            external_ip = None
+        else:
+            # 'ephemeral' is also libcloud's default
+            external_ip = 'ephemeral'
+        private_address = kwargs.get('private_address')
+        if private_address:
+            internal_ip = self.get_reserved_address(private_address, region)
+        else:
+            internal_ip = None
         disks = [{
             'autoDelete': True,
             'boot': True,
@@ -245,9 +269,10 @@ class GCEProvider(BaseLibcloudProvider):
             ex_tags=tags,
             ex_network=subnet.network,
             ex_subnetwork=subnet,
-            # 'ephemeral' is also libcloud's default, None gives no public
-            # (external, in GCE terms) IP
-            external_ip=None if kwargs.get('no_public_ip') else 'ephemeral',
+            # None gives no public (external, in GCE terms) IP, and for the
+            # private (internal) IP it means one picked from the subnet
+            external_ip=external_ip,
+            internal_ip=internal_ip,
             ex_metadata={
                 'sshKeys': auth_key,
                 'startup-script': cloud_init,
@@ -260,6 +285,13 @@ class GCEProvider(BaseLibcloudProvider):
             ex_service_accounts=[service_account]
         )
         return node, None
+
+
+    def get_reserved_address(self, name, region):
+        try:
+            return self.driver.ex_get_address(name, region=region)
+        except ResourceNotFoundError:
+            raise UserError('No reserved address named %r in %s' % (name, region))
 
 
     def wait_for_init_script(self, client, extra=None):

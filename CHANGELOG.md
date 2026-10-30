@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELEASED -
 -------------------
 
+## Added
+- `--public-address` and `--private-address` for GCE nodes, to attach reserved
+  addresses by name instead of getting an ephemeral public IP and a private IP
+  picked from the subnet. Lets a node that others find by IP, like a saltmaster,
+  keep its addresses when it is rebuilt.
+
 ## Changed
 - Stop adding `user: salt` to the master minion config by default. This does not impact
   the user statement in the master config.

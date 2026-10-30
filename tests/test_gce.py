@@ -186,3 +186,63 @@ def test_get_zones_unknown_region():
 def test_instance_name_generation():
     minion_id = '01.db.example.com'
     assert gce.name_from_minion_id(minion_id) == 'hart-com-example-db-01-b64faa'
+
+
+def test_gets_private_ip_from_subnet_by_default():
+    provider = build_gce_provider()
+
+    # internal_ip is what libcloud (and GCE) calls the private IP
+    assert create_node(provider)['internal_ip'] is None
+
+
+def test_can_use_reserved_public_address():
+    provider = build_gce_provider()
+    address = Mock()
+    provider.driver.ex_get_address.return_value = address
+
+    external_ip = create_node(provider, public_address='saltmaster')['external_ip']
+
+    assert external_ip is address
+    provider.driver.ex_get_address.assert_called_once_with('saltmaster',
+        region='us-east4')
+
+
+def test_can_use_reserved_private_address():
+    provider = build_gce_provider()
+    address = Mock()
+    provider.driver.ex_get_address.return_value = address
+
+    internal_ip = create_node(provider,
+        private_address='saltmaster-internal')['internal_ip']
+
+    assert internal_ip is address
+    provider.driver.ex_get_address.assert_called_once_with('saltmaster-internal',
+        region='us-east4')
+
+
+def test_rejects_public_address_together_with_no_public_ip():
+    provider = build_gce_provider()
+
+    with pytest.raises(UserError):
+        create_node(provider, public_address='saltmaster', no_public_ip=True)
+
+
+def test_parses_address_arguments():
+    provider = build_gce_provider()
+    parser = argparse.ArgumentParser()
+    provider.add_create_minion_arguments(parser)
+
+    args = parser.parse_args(['--public-address', 'saltmaster',
+        '--private-address', 'saltmaster-internal'])
+
+    assert args.public_address == 'saltmaster'
+    assert args.private_address == 'saltmaster-internal'
+
+
+def test_rejects_unknown_reserved_address():
+    provider = build_gce_provider()
+    provider.driver.ex_get_address.side_effect = google.ResourceNotFoundError(
+        'not found', 404, None)
+
+    with pytest.raises(UserError):
+        create_node(provider, public_address='missing')
