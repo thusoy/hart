@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+
+UNRELEASED -
+-------------------
+
+## Fixed
+- Keys hart pre-accepts on the master are now owned by the master's user
+  instead of root. Since Salt 3008 `salt-key` chmods a key before deleting
+  it, so `destroy-minion` failed with "Operation not permitted" on keys hart
+  had written as root.
+
+
 0.23.0 - 2026-10-31
 -------------------
 

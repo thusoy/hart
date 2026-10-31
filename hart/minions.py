@@ -16,6 +16,9 @@ from .utils import get_private_ip, log_error, log_warning
 from .zones import DISTRIBUTED_ZONE, pick_distributed_zones
 
 
+MASTER_PKI_DIR = '/etc/salt/pki/master'
+
+
 def create_minion(
         minion_id,
         provider,
@@ -246,12 +249,19 @@ def check_existing_minion(minion_id, non_interactive=False):
 
 
 def trust_minion_key(minion_id, minion_pubkey):
-    with open('/etc/salt/pki/master/minions/%s' % minion_id, 'wb') as fh:
+    minions_dir = os.path.join(MASTER_PKI_DIR, 'minions')
+    # hart runs as root, but the master (and thus salt-key) runs as its own
+    # user. Since Salt 3008 salt-key chmods a key before deleting it, which
+    # fails on a key owned by someone else, so hand the key to the master's
+    # user like the master itself would have.
+    owner = os.stat(minions_dir)
+    with open(os.path.join(minions_dir, minion_id), 'wb') as fh:
         fh.write(minion_pubkey.encode('utf-8'))
         os.fchmod(fh.fileno(), 0o644)
+        os.fchown(fh.fileno(), owner.st_uid, owner.st_gid)
 
     # If the minion connected before we trusted the key, remove the duplicate key in minions_pre
-    pre_key_path = '/etc/salt/pki/master/minions_pre/%s' % minion_id
+    pre_key_path = os.path.join(MASTER_PKI_DIR, 'minions_pre', minion_id)
     try:
         pre_fh = open(pre_key_path)
     except IOError:

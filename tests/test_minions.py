@@ -118,3 +118,26 @@ def test_connect_minion_falls_back_to_public_ip(
     connect_minion(hart_node, None)
 
     assert mock_get_client.call_args[0][0] == '203.0.113.5'
+
+
+def test_trusted_key_is_owned_by_the_master_user(tmp_path, monkeypatch):
+    import os
+    from hart import minions
+    pki_dir = tmp_path / 'master'
+    (pki_dir / 'minions').mkdir(parents=True)
+    (pki_dir / 'minions_pre').mkdir()
+    # Give the directory a distinguishable owner without needing root
+    minions_dir_stat = os.stat_result((0o755, 0, 0, 1, 1234, 5678, 0, 0, 0, 0))
+    real_stat = os.stat
+    monkeypatch.setattr(os, 'stat',
+        lambda path, *a, **kw: minions_dir_stat if str(path) == str(pki_dir / 'minions') else real_stat(path, *a, **kw))
+    chowns = []
+    monkeypatch.setattr(os, 'fchown', lambda fd, uid, gid: chowns.append((uid, gid)))
+    monkeypatch.setattr(minions, 'MASTER_PKI_DIR', str(pki_dir))
+
+    minions.trust_minion_key('minion.example.com', 'pubkey')
+
+    # salt-key runs as the master's user and, since Salt 3008, chmods a key
+    # before deleting it, which fails on a root-owned key
+    assert (pki_dir / 'minions' / 'minion.example.com').read_text() == 'pubkey'
+    assert chowns == [(1234, 5678)]
