@@ -1,6 +1,8 @@
 import argparse
+import datetime
 from unittest.mock import MagicMock, Mock, patch
 
+from google.auth import exceptions as google_auth_exceptions
 from libcloud.common import google
 import pytest
 
@@ -57,28 +59,60 @@ def test_authenticates_with_service_account_key():
         project='example', auth_type='SA')
 
 
-def test_authenticates_with_vm_identity_without_key():
-    with patch.object(gce, 'get_driver') as get_driver:
-        gce.GCEProvider(project='example')
+class FakeCredentials:
+    '''The parts of google.auth.credentials.Credentials that hart uses'''
+
+    def __init__(self, token='token', valid=True):
+        self.token = token
+        self.valid = valid
+        self.expiry = datetime.datetime(2030, 1, 1)
+        self.refreshes = 0
+
+    def refresh(self, request):
+        self.refreshes += 1
+        self.token = 'refreshed-token'
+        self.valid = True
+
+
+def test_authenticates_with_default_credentials_without_key():
+    with patch.object(gce, 'get_driver') as get_driver, \
+            patch.object(gce.google.auth, 'default') as default:
+        default.return_value = (FakeCredentials(), 'example')
+        provider = gce.GCEProvider(project='example')
 
     kwargs = get_driver.return_value.call_args[1]
-    assert kwargs['auth_type'] == 'GCE'
     assert kwargs['project'] == 'example'
+    assert provider.driver.connection.oauth2_credential.access_token == 'token'
 
 
-def test_vm_identity_gets_token_from_metadata_server(tmp_path, monkeypatch):
+def test_default_credentials_never_touch_libclouds_token_code(tmp_path, monkeypatch):
     # Builds a real libcloud driver, to catch arguments libcloud rejects
     monkeypatch.setenv('HOME', str(tmp_path))
     paths = []
     def get_metadata(path='', retry_failed=None):
         paths.append(path)
-        return 200, '', '{"access_token": "token", "expires_in": 3599}'
+        return 200, '', '{"access_token": "metadata-token", "expires_in": 3599}'
     monkeypatch.setattr(google, '_get_gce_metadata', get_metadata)
+    credentials = FakeCredentials(valid=False)
 
-    provider = gce.GCEProvider(project='example')
+    with patch.object(gce.google.auth, 'default', return_value=(credentials, None)):
+        provider = gce.GCEProvider(project='example')
 
-    assert provider.driver.connection.oauth2_credential.access_token == 'token'
-    assert paths == ['/instance/service-accounts/default/token']
+    # The token comes from google-auth, refreshed when it has expired, and
+    # libcloud's own metadata server client is never consulted
+    assert provider.driver.connection.oauth2_credential.access_token == 'refreshed-token'
+    assert credentials.refreshes == 1
+    assert paths == []
+    # Nothing is left behind from seeding libcloud's credential cache
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_explains_how_to_get_default_credentials_when_there_are_none():
+    with patch.object(gce, 'get_driver'), \
+            patch.object(gce.google.auth, 'default',
+                side_effect=google_auth_exceptions.DefaultCredentialsError('none')):
+        with pytest.raises(UserError, match='application-default login'):
+            gce.GCEProvider(project='example')
 
 
 @pytest.mark.parametrize('credentials', [

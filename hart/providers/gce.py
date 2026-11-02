@@ -1,6 +1,13 @@
+import datetime
 import hashlib
+import json
+import os
+import tempfile
 
-from libcloud.common.google import ResourceNotFoundError
+import google.auth
+import google.auth.exceptions
+import google.auth.transport.requests
+from libcloud.common.google import ResourceNotFoundError, UTC_TIMESTAMP_FORMAT
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
@@ -8,6 +15,10 @@ from .base import NodeSize, Region
 from .libcloud import BaseLibcloudProvider
 from ..constants import DEBIAN_VERSIONS
 from ..exceptions import UserError
+
+# What hart needs; google-auth passes it on to the metadata server on a VM,
+# user credentials from gcloud already cover it
+COMPUTE_SCOPE = 'https://www.googleapis.com/auth/compute'
 
 # Machine families that live-migrate under AMD SEV, per Google's supported
 # configurations for Confidential VM. Everything else has to stop for host
@@ -59,13 +70,9 @@ class GCEProvider(BaseLibcloudProvider):
                 auth_type='SA')
         elif user_id or key:
             raise UserError('GCE needs both user_id and key to use a service account '
-                'key, or neither to use the identity of the VM hart runs on')
+                'key, or neither to use application default credentials')
         else:
-            # Tokens come from the metadata server. libcloud only uses user_id
-            # to name the file it caches the token in, and key is unused but
-            # can't be None, as that shifts libcloud's positional arguments.
-            self.driver = constructor(user_id='vm-identity', key='', project=project,
-                auth_type='GCE')
+            self.driver = build_driver_with_default_credentials(constructor, project)
         self.region = region
 
 
@@ -398,6 +405,55 @@ def name_from_minion_id(minion_id):
     sanitized_name = '-'.join(reversed(minion_id.split('.')))
     hashed_id = hashlib.sha256(minion_id.encode('utf-8')).hexdigest()
     return 'hart-%s-%s' % (sanitized_name[:47], hashed_id[:6])
+
+
+class DefaultCredential:
+    '''Stand-in for libcloud's GoogleOAuth2Credential that gets tokens from
+    google-auth's application default credentials: the file from `gcloud auth
+    application-default login` on a workstation, the metadata server on a GCE
+    VM. libcloud only ever reads .access_token.'''
+
+    def __init__(self, credentials):
+        self.credentials = credentials
+        self.request = google.auth.transport.requests.Request()
+
+    @property
+    def access_token(self):
+        if not self.credentials.valid:
+            self.credentials.refresh(self.request)
+        return self.credentials.token
+
+
+def build_driver_with_default_credentials(constructor, project):
+    try:
+        credentials, _ = google.auth.default(scopes=[COMPUTE_SCOPE])
+    except google.auth.exceptions.DefaultCredentialsError as e:
+        raise UserError('No GCE credentials: give user_id and key in the config '
+            'to use a service account key, or run `gcloud auth application-default '
+            'login` (%s)' % e)
+    credential = DefaultCredential(credentials)
+    # libcloud fetches a token in its constructor through one of the schemes
+    # it knows, none of which is application default credentials, unless it
+    # finds a cached token file. Seed one to get through the constructor,
+    # then hand the connection the credential that refreshes via google-auth.
+    token = credential.access_token
+    # Only read if libcloud's credential were still in use, so the value is
+    # not important, but it has to parse
+    expiry = credentials.expiry or datetime.datetime.utcnow()
+    with tempfile.NamedTemporaryFile('w', suffix='.json', delete=False) as fh:
+        json.dump({
+            'access_token': token,
+            'expire_time': expiry.strftime(UTC_TIMESTAMP_FORMAT),
+        }, fh)
+    try:
+        # user_id only names libcloud's token cache file, and key is unused
+        # but can't be None as that shifts libcloud's positional arguments
+        driver = constructor(user_id='default-credentials', key='', project=project,
+            auth_type='GCE', credential_file=fh.name)
+    finally:
+        os.remove(fh.name)
+    driver.connection.oauth2_credential = credential
+    return driver
 
 
 def check_image_supports_confidential_type(image, confidential_type):

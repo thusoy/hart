@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 UNRELEASED -
 -------------------
 
+## Added
+- GCE authenticates with application default credentials when the config has
+  no `user_id` and `key`: the account from `gcloud auth application-default
+  login` on a workstation, the VM's service account on GCE. The VM identity
+  support from 0.22.0 is now a special case of this, and no longer needs a
+  service account key to run hart locally.
+
 ## Fixed
 - `--private-address` put libcloud's address object into the request body,
   which failed with "Object of type GCEAddress is not JSON serializable"

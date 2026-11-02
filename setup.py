@@ -13,6 +13,7 @@ install_requires = [
     'toml',
     'ifaddr',
     'boto3',
+    'google-auth',
 ]
 
 version_file = os.path.join(os.path.dirname(__file__), 'hart', 'version.py')
