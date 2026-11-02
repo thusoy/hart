@@ -1,7 +1,8 @@
+import contextlib
 import tempfile
 from unittest import mock
 
-from hart.master import connect_to_master
+from hart.master import connect_to_master, create_master_node
 
 
 HOST_KEYS = (
@@ -37,3 +38,34 @@ def test_connecting_writes_a_known_hosts_file_for_the_new_master(
     assert 'ssh-ed25519 SHA256:B970hxKQtq+8OucXyrRye3rPzfyEusTnKGp1XPIKVD8' in output
     assert 'ecdsa-sha2-nistp256 SHA256:hbXWYdBrsOyu43/M0JizUP5K25IjKV8Zs5EZtJ9O6XI' in output
     assert mock_run_command.call_count == 1
+
+
+def build_mock_provider():
+    provider = mock.Mock()
+    provider.username = 'root'
+    node = mock.Mock()
+    node.public_ips = ['203.0.113.5']
+    node.private_ips = ['10.0.0.5']
+
+    @contextlib.contextmanager
+    def create_temp_ssh_key(key_name):
+        yield ('temp-ssh-key', 'auth-key')
+
+    provider.create_temp_ssh_key = create_temp_ssh_key
+    provider.create_node.return_value = (node, None)
+    provider.wait_for_public_ip.return_value = node
+    return provider
+
+
+def test_masters_are_not_recorded_in_the_minion_store(tmp_path, monkeypatch):
+    # The store feeds the master's own firewall and ssh principals with its
+    # minions, so the master doesn't belong in it, and a workstation creating
+    # one has nowhere to write it anyway
+    store = tmp_path / 'minions.json'
+    monkeypatch.setenv('HART_MINION_STORE', str(store))
+    provider = build_mock_provider()
+
+    create_master_node('salt.example.com', provider, region='us-east4')
+
+    assert not store.exists()
+    assert list(tmp_path.iterdir()) == []

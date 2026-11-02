@@ -19,6 +19,12 @@ UNRELEASED -
   can connect without trusting the keys on first use or adding keys that a
   restore from backup is about to replace to `~/.ssh/known_hosts`.
 
+## Changed
+- `create-master` no longer records the master in the minion store. The
+  store is for the master's minions, which feed its firewall and ssh
+  principals, and a workstation creating a master has nowhere to write it,
+  which showed up as a warning on every run.
+
 ## Removed
 - Seeding the node's random pool from cloud-init and over ssh. Writing to
   `/dev/random` never credited any entropy, and the kernel seeds its RNG from

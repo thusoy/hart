@@ -9,7 +9,6 @@ import yaml
 
 from . import utils
 from .constants import DEBIAN_VERSIONS
-from .minions import destroy_node, save_minion_to_store
 from .ssh import get_verified_ssh_client, ssh_run_command, ssh_run_init_script
 from .utils import get_private_ip
 
@@ -50,7 +49,8 @@ def create_master(
         connect_to_master(hart_node, script, authorize_key)
     except:
         sys.stderr.write('Destroying master since it failed startup\n')
-        destroy_node(hart_node)
+        # Not minions.destroy_node, since masters aren't in the minion store
+        hart_node.provider.destroy_node(hart_node.node, extra=hart_node.node_extra)
         raise
 
 
@@ -122,15 +122,6 @@ def create_master_node(
                     print('Master running at %s' % public_ip)
             hart_node = utils.HartNode(minion_id, public_ip, node, provider, ssh_key,
                 ssh_canary, extra, connect_ip)
-            save_minion_to_store(hart_node,
-                region=region,
-                zone=kwargs.get('zone'),
-                size=size,
-                debian_codename=debian_codename,
-                minion_config=default_minion_config,
-                # Nodes without a public IP can also only connect privately
-                connect_via_private_ip=connect_via_private_ip or no_public_ip,
-            )
             return hart_node
         except:
             traceback.print_exc()
