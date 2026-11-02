@@ -19,6 +19,14 @@ UNRELEASED -
   can connect without trusting the keys on first use or adding keys that a
   restore from backup is about to replace to `~/.ssh/known_hosts`.
 
+## Removed
+- Seeding the node's random pool from cloud-init and over ssh. Writing to
+  `/dev/random` never credited any entropy, and the kernel seeds its RNG from
+  the CPU before userspace runs on every supported provider, so the ssh host
+  keys were already generated from a seeded RNG by the time hart got in. The
+  canary check is now the first command on a new node and inherits the
+  retries the seeding had.
+
 ## Fixed
 - `--private-address` put libcloud's address object into the request body,
   which failed with "Object of type GCEAddress is not JSON serializable"

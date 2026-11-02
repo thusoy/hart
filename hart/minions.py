@@ -100,7 +100,6 @@ def create_node(
         default_minion_config.update(minion_config)
 
     cloud_init = cloud_init_template.render(**{
-        'random_seed': utils.create_token(),
         'minion_config': yaml.dump(default_minion_config),
         'salt_version': salt_version,
         'ssh_canary': ssh_canary,

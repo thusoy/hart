@@ -1,9 +1,5 @@
 set -euo nounset -o noclobber
 
-# Help seed the random pool to make sure any parallel process that might
-# generate keys or do TLS has random data to pull from.
-echo '{{ random_seed }}' > /dev/random
-
 # Deploy the ssh-canary as one of the first thing to ensure we can connect and
 # verify quickly
 echo '{{ ssh_canary }}' > /tmp/ssh-canary

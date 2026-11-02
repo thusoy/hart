@@ -12,6 +12,10 @@ def build_client(active=True):
     return client
 
 
+def run_command(client):
+    client.exec_command('cat /tmp/ssh-canary', timeout=3)
+
+
 @mock.patch('hart.ssh.time.sleep')
 def test_retries_session_open_while_node_is_booting(mock_sleep):
     client = build_client()
@@ -21,8 +25,7 @@ def test_retries_session_open_while_node_is_booting(mock_sleep):
         (mock.Mock(), mock.Mock(), mock.Mock()),
     ]
 
-    ret = ssh.run_while_booting(client, ssh.seed_client_random_pool,
-        '203.0.113.5', 'key', 'root')
+    ret = ssh.run_while_booting(client, run_command, '203.0.113.5', 'key', 'root')
 
     assert ret is client
     assert client.exec_command.call_count == 3
@@ -37,8 +40,7 @@ def test_reconnects_when_the_connection_dropped(mock_connect, mock_sleep):
     new_client.exec_command.return_value = (mock.Mock(), mock.Mock(), mock.Mock())
     mock_connect.return_value = new_client
 
-    ret = ssh.run_while_booting(dead_client, ssh.seed_client_random_pool,
-        '203.0.113.5', 'key', 'root')
+    ret = ssh.run_while_booting(dead_client, run_command, '203.0.113.5', 'key', 'root')
 
     assert ret is new_client
     mock_connect.assert_called_once_with('203.0.113.5', 'key', 'root')
@@ -51,5 +53,5 @@ def test_gives_up_after_the_timeout(mock_time, mock_sleep):
     client.exec_command.side_effect = SSHException('Timeout opening channel.')
 
     with pytest.raises(SSHException):
-        ssh.run_while_booting(client, ssh.seed_client_random_pool,
-            '203.0.113.5', 'key', 'root', timeout=60)
+        ssh.run_while_booting(client, run_command, '203.0.113.5', 'key', 'root',
+            timeout=60)
