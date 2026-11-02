@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 
+UNRELEASED -
+-------------------
+
+## Fixed
+- `--private-address` put libcloud's address object into the request body,
+  which failed with "Object of type GCEAddress is not JSON serializable"
+  before anything reached GCE.
+
+
 0.23.1 - 2026-10-31
 -------------------
 

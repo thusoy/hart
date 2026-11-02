@@ -341,12 +341,14 @@ def test_can_use_reserved_public_address():
 def test_can_use_reserved_private_address():
     provider = build_gce_provider()
     address = Mock()
+    address.address = '10.68.0.20'
     provider.driver.ex_get_address.return_value = address
 
     internal_ip = create_node(provider,
         private_address='saltmaster-internal')['internal_ip']
 
-    assert internal_ip is address
+    # libcloud puts this straight into the request, unlike the public address
+    assert internal_ip == '10.68.0.20'
     provider.driver.ex_get_address.assert_called_once_with('saltmaster-internal',
         region='us-east4')
 

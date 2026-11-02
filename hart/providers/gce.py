@@ -240,7 +240,9 @@ class GCEProvider(BaseLibcloudProvider):
             external_ip = 'ephemeral'
         private_address = kwargs.get('private_address')
         if private_address:
-            internal_ip = self.get_reserved_address(private_address, region)
+            # libcloud takes the public address as an object but puts the
+            # private one into the request as is, so it has to be the string
+            internal_ip = self.get_reserved_address(private_address, region).address
         else:
             internal_ip = None
         boot_disk = {
