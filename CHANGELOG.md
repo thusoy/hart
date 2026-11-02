@@ -14,6 +14,10 @@ UNRELEASED -
   login` on a workstation, the VM's service account on GCE. The VM identity
   support from 0.22.0 is now a special case of this, and no longer needs a
   service account key to run hart locally.
+- `create-master` writes the new master's host keys to a temporary
+  known_hosts file and prints an ssh command that uses it, so the operator
+  can connect without trusting the keys on first use or adding keys that a
+  restore from backup is about to replace to `~/.ssh/known_hosts`.
 
 ## Fixed
 - `--private-address` put libcloud's address object into the request body,

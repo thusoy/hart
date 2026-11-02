@@ -1,4 +1,8 @@
+import base64
+import hashlib
+import os
 import sys
+import tempfile
 import traceback
 
 import yaml
@@ -151,8 +155,34 @@ def connect_to_master(hart_node, script, authorize_key=None):
         if script:
             ssh_run_init_script(client, script)
 
-        master_pubkeys = ssh_run_command(client,
-            'for pubkey in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$pubkey"; done',
+        host_keys = ssh_run_command(client, 'cat /etc/ssh/ssh_host_*_key.pub',
             log_stdout=False)
-        print('Master created: %s@%s\nssh fingerprints: \n%s' % (
-            username, connect_ip, master_pubkeys))
+        known_hosts_path = write_known_hosts(connect_ip, host_keys)
+        print('Master created: %s@%s\nssh fingerprints:\n%s' % (
+            username, connect_ip, '\n'.join(fingerprints(host_keys))))
+        print('The host keys are trusted for this session in %s, connect with:\n'
+            '    ssh -o UserKnownHostsFile=%s %s@%s' % (
+                known_hosts_path, known_hosts_path, username, connect_ip))
+
+
+def fingerprints(host_keys):
+    '''The SHA256 fingerprints of the keys as ssh-keygen -l prints them'''
+    for line in host_keys.splitlines():
+        key_type, key = line.split()[:2]
+        digest = hashlib.sha256(base64.b64decode(key)).digest()
+        yield '%s SHA256:%s' % (key_type, base64.b64encode(digest).decode('ascii').rstrip('='))
+
+
+def write_known_hosts(ip, host_keys):
+    '''Write the host keys, read over the connection the canary verified, to a
+    temporary known_hosts file. Lets the operator connect without trusting the
+    keys on first use or adding them to ~/.ssh/known_hosts, which matters when
+    they're only around until a restore from backup replaces them.'''
+    directory = tempfile.mkdtemp(prefix='hart-')
+    path = os.path.join(directory, 'known_hosts')
+    with open(path, 'w') as fh:
+        os.fchmod(fh.fileno(), 0o600)
+        for line in host_keys.splitlines():
+            key_type, key = line.split()[:2]
+            fh.write('%s %s %s\n' % (ip, key_type, key))
+    return path
