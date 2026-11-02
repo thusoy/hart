@@ -96,7 +96,7 @@ def get_verified_ssh_client(ip, ssh_key, canary, username='root'):
     # cloud-init since the contents of cloud-init is rarely safe from someone
     # that manages to compromise the server.
     print('Seeding random pool')
-    seed_client_random_pool(client)
+    client = run_while_booting(client, seed_client_random_pool, ip, ssh_key, username)
 
     # Verify the ssh canary as the first thing to not run any potentially
     # dangerous operations on an untrusted box
@@ -130,6 +130,26 @@ def connect_to_node(ip, client_ssh_key, username):
         raise ValueError('Failed to connect to new node')
 
     return client
+
+
+def run_while_booting(client, action, ip, ssh_key, username, timeout=60):
+    '''Run action(client) on a node that is still booting, where sshd can be
+    slow to open a session or get reloaded by cloud-init right after we
+    connected. Returns the client the action succeeded with, which is a new
+    one if the connection had to be re-established.'''
+    start_time = time.time()
+    while True:
+        try:
+            action(client)
+            return client
+        except SSHException as error:
+            if time.time() - start_time > timeout:
+                raise
+            print('Could not run command yet, waiting (%s)' % error)
+            transport = client.get_transport()
+            if transport is None or not transport.is_active():
+                client = connect_to_node(ip, ssh_key, username)
+            time.sleep(2)
 
 
 def seed_client_random_pool(client):

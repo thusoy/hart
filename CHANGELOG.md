@@ -19,6 +19,10 @@ UNRELEASED -
 - `--private-address` put libcloud's address object into the request body,
   which failed with "Object of type GCEAddress is not JSON serializable"
   before anything reached GCE.
+- The first command on a new node is retried for a minute if sshd is slow to
+  open a session or the connection drops, which happens when cloud-init
+  reloads sshd right after hart connected. It used to fail the creation
+  outright with "Timeout opening channel".
 
 
 0.23.1 - 2026-10-31
